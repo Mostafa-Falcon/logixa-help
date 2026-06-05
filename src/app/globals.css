@@ -26,6 +26,30 @@
 
 :root {
   color-scheme: dark;
+
+  /* shadcn/ui CSS variables (base-nova) — mapped to Logixa theme */
+  --background: #11130f;
+  --foreground: #f5f2ea;
+  --card: #161814;
+  --card-foreground: #f5f2ea;
+  --popover: #161814;
+  --popover-foreground: #f5f2ea;
+  --primary: #e0b65c;
+  --primary-foreground: #11130f;
+  --secondary: #369985;
+  --secondary-foreground: #f5f2ea;
+  --muted: #1d211b;
+  --muted-foreground: #aaa99f;
+  --accent: #58c4aa;
+  --accent-foreground: #11130f;
+  --destructive: #f26c6c;
+  --destructive-foreground: #fff;
+  --success: #39c172;
+  --warning: #f0b04f;
+  --border: rgba(224, 197, 132, 0.16);
+  --input: rgba(224, 197, 132, 0.16);
+  --ring: #e0b65c;
+  --radius: 0.5rem;
 }
 
 html {
