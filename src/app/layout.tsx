@@ -38,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <meta name="theme-color" content="#11130f" />
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      <meta name="monetag" content="2c3d32eb5adf91efa4499e66f4def7bd" />
       <body className={`${cairo.variable} app-body`}>
         <AppProviders>
           <div className="site-shell">
