@@ -1,0 +1,15 @@
+{
+  "name": "Logixa Help - منتدى عربي تقني",
+  "short_name": "Logixa Help",
+  "description": "منتدى عربي تقني للأسئلة والحلول — مشاكل الكمبيوتر، الموبايل، البرمجة، والذكاء الاصطناعي",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#11130f",
+  "theme_color": "#11130f",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "512x512", "type": "image/svg+xml" }
+  ]
+}
