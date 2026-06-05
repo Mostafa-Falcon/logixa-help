@@ -13,13 +13,17 @@ const cairo = Cairo({
   weight: ['400', '500', '600', '700', '800'],
 })
 
+const baseUrl = 'https://logixa-help.vercel.app'
+
 export const metadata: Metadata = {
+  metadataBase: new URL(baseUrl),
   title: {
     default: 'Logixa Help - منتدى عربي تقني للأسئلة والحلول',
     template: '%s - Logixa Help',
   },
   description:
     'منتدى عربي تقني يساعدك في مشاكل الكمبيوتر، الموبايل، البرمجة، وأدوات الذكاء الاصطناعي. صفحات سريعة، محتوى واضح، وتجربة قراءة موثوقة.',
+  keywords: ['منتدى عربي', 'تقني', 'أسئلة', 'حلول', 'كمبيوتر', 'برمجة', 'ذكاء اصطناعي', 'مشاكل ويندوز', 'شروحات'],
   openGraph: {
     title: 'Logixa Help - منتدى عربي تقني للأسئلة والحلول',
     description:
@@ -27,6 +31,19 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ar_AR',
     siteName: 'Logixa Help',
+    url: baseUrl,
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Logixa Help - منتدى عربي تقني',
+    description: 'منصة عربية للأسئلة والإجابات التقنية',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: baseUrl,
   },
   category: 'technology',
 }

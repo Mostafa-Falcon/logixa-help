@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, Layers, Search, Sparkles, TrendingUp, Zap } from 'lucide-react'
+import { ArrowLeft, BookOpen, Layers, MessageSquare, Plus, Search, Sparkles, TrendingUp, UserPlus, Zap } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -76,10 +76,10 @@ export default async function HomePage() {
 
       <div className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
         <div className="stat-grid">
-          <StatCard label="الموضوعات" value={totalThreads ?? 0} />
-          <StatCard label="الردود" value={totalReplies ?? 0} />
-          <StatCard label="الأعضاء" value={totalUsers ?? 0} />
-          <StatCard label="الأقسام" value={categories?.length ?? 0} />
+          <StatCard label="الموضوعات" value={totalThreads} />
+          <StatCard label="الردود" value={totalReplies} />
+          <StatCard label="الأعضاء" value={totalUsers} />
+          <StatCard label="الأقسام" value={categories.length} />
         </div>
 
         <Card variant="soft" className="p-5">
@@ -122,12 +122,29 @@ export default async function HomePage() {
           </Button>
         </div>
 
-        {!categories || categories.length === 0 ? (
+        {categories.length === 0 ? (
           <Card padding="lg" className="text-center">
-            <div className="text-4xl">...</div>
-            <p className="mt-3 text-sm muted">
-              الأقسام ما زالت تحت الإعداد. بمجرد تعبئتها ستظهر هنا كواجهة المنتدى الأساسية.
+            <div className="mx-auto node-icon text-2xl">
+              <Layers className="h-8 w-8" />
+            </div>
+            <h3 className="mt-4 text-xl font-extrabold text-white">المنتدي لسه جديد — أول قسم ينتظرك</h3>
+            <p className="mx-auto mt-3 max-w-lg text-sm muted">
+          الأقسام بتتضاف من لوحة الإدارة المخصصة للمشرفين، لكن المحتوى الحقيقي بيبدألما أول شخص يفتح موضوع. الـ admin يقدر يضيف الأقسام اللي تناسب جمهور المنتدى.
             </p>
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <Button asChild variant="primary">
+                <Link href="/admin">
+                  <Plus className="h-4 w-4" />
+                  إدارة الأقسام
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/t/new">
+                  <MessageSquare className="h-4 w-4" />
+                  اكتب أول موضوع
+                </Link>
+              </Button>
+            </div>
           </Card>
         ) : (
           <div className="grid gap-4">
@@ -166,6 +183,24 @@ export default async function HomePage() {
         )}
       </section>
 
+      <section className="grid gap-4 sm:grid-cols-3">
+        <Card padding="md" className="text-center">
+          <div className="mx-auto node-icon text-xl">1</div>
+          <h3 className="mt-3 text-base font-extrabold text-white">اكتب مشكلتك</h3>
+          <p className="mt-2 text-sm muted">وصف واضح ومباشر للمشكلة أو الاستفسار التقني اللي عندك</p>
+        </Card>
+        <Card padding="md" className="text-center">
+          <div className="mx-auto node-icon text-xl">2</div>
+          <h3 className="mt-3 text-base font-extrabold text-white">استقبل الحلول</h3>
+          <p className="mt-2 text-sm muted">المجتمع والمساعدين بيقدموا إجابات عملية ومجربة</p>
+        </Card>
+        <Card padding="md" className="text-center">
+          <div className="mx-auto node-icon text-xl">3</div>
+          <h3 className="mt-3 text-base font-extrabold text-white">اختر الأفضل</h3>
+          <p className="mt-2 text-sm muted">صوت للإجابة اللي ساعدتك عشان تفيد غيرك في المستقبل</p>
+        </Card>
+      </section>
+
       <section className="grid gap-5 lg:grid-cols-[0.78fr_1.22fr]">
         <Card variant="soft" className="p-5">
           <span className="eyebrow">انتشار منظم</span>
@@ -190,8 +225,24 @@ export default async function HomePage() {
             <span className="muted text-sm">{latestThreads?.length ?? 0} موضوع</span>
           </div>
 
-          {!latestThreads || latestThreads.length === 0 ? (
-            <div className="p-6 text-sm muted">لا توجد موضوعات منشورة بعد.</div>
+          {latestThreads.length === 0 ? (
+            <div className="p-8 text-center">
+              <div className="mx-auto node-icon text-xl">
+                <BookOpen className="h-6 w-6" />
+              </div>
+              <h3 className="mt-3 text-lg font-extrabold text-white">أول نقاش في المنتدى لسه مستنيك</h3>
+              <p className="mx-auto mt-2 max-w-md text-sm muted">
+                أي موضوع تقني عندك — مشكلة، استفسار، أو شرح — ممكن يبقى أول محتوى مفيد في المنتدى.
+              </p>
+              <div className="mt-4">
+                <Button asChild variant="primary">
+                  <Link href="/t/new">
+                    <Plus className="h-4 w-4" />
+                    اكتب أول موضوع
+                  </Link>
+                </Button>
+              </div>
+            </div>
           ) : (
             <div>
               {latestThreads.map((thread, index) => (
