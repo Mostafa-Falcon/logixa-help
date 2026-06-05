@@ -1,18 +1,26 @@
-import { createServerSupabaseClient } from '@/lib/supabase-server'
-import type { Category } from '@/lib/types'
+"use client"
 
-import NewThreadComposer from './NewThreadComposer'
+import { Suspense, useEffect, useState } from "react"
+import { collection, getDocs, query, orderBy } from "firebase/firestore"
 
-export const dynamic = 'force-dynamic'
+import { db } from "@/lib/firebase"
+import NewThreadComposer from "./NewThreadComposer"
 
-export default async function NewThreadPage() {
-  const supabase = await createServerSupabaseClient()
+function NewThreadPageInner() {
+  const [categories, setCategories] = useState<any[]>([])
 
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .order('sort_order')
-    .returns<Category[]>()
+  useEffect(() => {
+    getDocs(query(collection(db, "categories"), orderBy("sort_order")))
+      .then((snap) => setCategories(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
+  }, [])
 
-  return <NewThreadComposer categories={categories ?? []} />
+  return <NewThreadComposer categories={categories} />
+}
+
+export default function NewThreadPage() {
+  return (
+    <Suspense fallback={<div className="content-wrap"><div className="surface-card p-8 text-sm muted">جارٍ التحميل...</div></div>}>
+      <NewThreadPageInner />
+    </Suspense>
+  )
 }

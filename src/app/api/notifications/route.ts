@@ -1,66 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server"
+import { collection, getDocs, query, where, orderBy, limit, doc, updateDoc } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+export async function GET(req: NextRequest) {
+  const uid = req.nextUrl.searchParams.get("uid")
+  if (!uid) return NextResponse.json({ error: "uid required" }, { status: 400 })
 
-export async function GET() {
-  const supabase = await createServerSupabaseClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const snap = await getDocs(
+    query(collection(db, "notifications"), where("user_id", "==", uid), orderBy("created_at", "desc"), limit(50)),
+  )
+  const notifications = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  const unread = notifications.filter((n: any) => !n.is_read).length
 
-  if (!user) {
-    return NextResponse.json({ error: 'غير مسجل' }, { status: 401 })
-  }
-
-  const { data: notifications } = await supabase
-    .from('notifications')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(50)
-
-  return NextResponse.json({ notifications })
+  return NextResponse.json({ notifications, unread })
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createServerSupabaseClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'غير مسجل' }, { status: 401 })
-  }
-
   const body = await req.json()
-  const { ids, all } = body
+  const { notification_id } = body
 
-  if (all === true) {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('user_id', user.id)
-      .eq('is_read', false)
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true })
-  }
-
-  if (!Array.isArray(ids) || ids.length === 0) {
-    return NextResponse.json({ error: 'يرجى تحديد الإشعارات المطلوب تحديثها' }, { status: 400 })
-  }
-
-  const { error } = await supabase
-    .from('notifications')
-    .update({ is_read: true })
-    .in('id', ids)
-    .eq('user_id', user.id)
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (notification_id) {
+    await updateDoc(doc(db, "notifications", notification_id), { is_read: true })
   }
 
   return NextResponse.json({ success: true })

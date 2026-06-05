@@ -1,54 +1,58 @@
-import Link from 'next/link'
-import { ArrowLeft, BookOpen, Layers, MessageSquare, Plus, Search, Sparkles, TrendingUp, UserPlus, Zap } from 'lucide-react'
+"use client"
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui/page-header'
-import { StatCard } from '@/components/ui/stat-card'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { safeCount, safeQuery } from '@/lib/safe-data'
-import type { Category } from '@/lib/types'
+import Link from "next/link"
+import { useEffect, useState } from "react"
+import { ArrowLeft, BookOpen, Layers, MessageSquare, Plus, Search, Sparkles, TrendingUp, Zap } from "lucide-react"
+import { collection, getDocs, query, orderBy, limit } from "firebase/firestore"
 
-type HomeThread = {
-  id: number
-  title: string
-  slug: string
-  views: number
-  replies_count: number
-  created_at: string
-  category: { name: string; slug: string } | null
-}
+import { db } from "@/lib/firebase"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { PageHeader } from "@/components/ui/page-header"
+import { StatCard } from "@/components/ui/stat-card"
+import type { Category } from "@/lib/types"
 
-export default async function HomePage() {
-  const supabase = await createServerSupabaseClient()
+export default function HomePage() {
+  const [categories, setCategories] = useState<Category[]>([])
+  const [totalThreads, setTotalThreads] = useState(0)
+  const [totalReplies, setTotalReplies] = useState(0)
+  const [totalUsers, setTotalUsers] = useState(0)
+  const [latestUser, setLatestUser] = useState<string | null>(null)
+  const [latestThreads, setLatestThreads] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const categories = await safeQuery(
-    supabase.from('categories').select('*').order('sort_order').returns<Category[]>(),
-    [],
-  )
+  useEffect(() => {
+    async function load() {
+      try {
+        const catSnap = await getDocs(query(collection(db, "categories"), orderBy("sort_order")))
+        const cats = catSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Category)
+        setCategories(cats)
 
-  const totalThreads = await safeCount(
-    supabase.from('threads').select('*', { count: 'exact', head: true }),
-  )
+        const [ts, rs, us] = await Promise.all([
+          getDocs(collection(db, "threads")),
+          getDocs(collection(db, "replies")),
+          getDocs(query(collection(db, "profiles"), orderBy("created_at", "desc"), limit(1))),
+        ])
+        setTotalThreads(ts.size)
+        setTotalReplies(rs.size)
+        setTotalUsers(us.size)
+        if (!us.empty) setLatestUser(us.docs[0].data().username ?? null)
 
-  const totalReplies = await safeCount(
-    supabase.from('replies').select('*', { count: 'exact', head: true }),
-  )
-
-  const totalUsers = await safeCount(
-    supabase.from('profiles').select('*', { count: 'exact', head: true }),
-  )
-
-  const latestUser = await safeQuery(
-    supabase.from('profiles').select('username').order('created_at', { ascending: false }).limit(1).single<{ username: string }>(),
-    null,
-  )
-
-  const latestThreads = await safeQuery(
-    supabase.from('threads').select('id, title, slug, views, replies_count, created_at, category:category_id(name, slug)').eq('status', 'published').order('created_at', { ascending: false }).limit(6).returns<HomeThread[]>(),
-    [],
-  )
+        const threadSnap = await getDocs(
+          query(collection(db, "threads"), orderBy("created_at", "desc"), limit(6)),
+        )
+        setLatestThreads(
+          threadSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
+        )
+      } catch (err) {
+        console.error("Failed to load homepage", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
 
   return (
     <div className="content-wrap space-y-6">
@@ -76,10 +80,10 @@ export default async function HomePage() {
 
       <div className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
         <div className="stat-grid">
-          <StatCard label="الموضوعات" value={totalThreads} />
-          <StatCard label="الردود" value={totalReplies} />
-          <StatCard label="الأعضاء" value={totalUsers} />
-          <StatCard label="الأقسام" value={categories.length} />
+          <StatCard label="الموضوعات" value={loading ? "..." : totalThreads} />
+          <StatCard label="الردود" value={loading ? "..." : totalReplies} />
+          <StatCard label="الأعضاء" value={loading ? "..." : totalUsers} />
+          <StatCard label="الأقسام" value={loading ? "..." : categories.length} />
         </div>
 
         <Card variant="soft" className="p-5">
@@ -100,7 +104,7 @@ export default async function HomePage() {
               <BookOpen className="h-4 w-4" />
               صفحات قابلة للأرشفة
             </span>
-            {latestUser?.username && <span className="meta-pill">آخر عضو: {latestUser.username}</span>}
+            {latestUser && <span className="meta-pill">آخر عضو: {latestUser}</span>}
           </div>
         </Card>
       </div>
@@ -110,9 +114,7 @@ export default async function HomePage() {
           <div>
             <span className="eyebrow">الأقسام الأساسية</span>
             <h2 className="mt-2 text-2xl font-extrabold text-white">ابدأ من القسم الأقرب لسؤالك</h2>
-            <p className="mt-2 max-w-2xl text-sm muted">
-              الأقسام قابلة للتوسع من لوحة الإدارة، لكن كل قسم لازم يبقى واضح بما يكفي ليخدم الزائر والبحث.
-            </p>
+            <p className="mt-2 max-w-2xl text-sm muted">الأقسام قابلة للتوسع من لوحة الإدارة، لكن كل قسم لازم يبقى واضح بما يكفي ليخدم الزائر والبحث.</p>
           </div>
           <Button asChild variant="ghost" className="self-start md:self-auto">
             <Link href="/search">
@@ -122,27 +124,25 @@ export default async function HomePage() {
           </Button>
         </div>
 
-        {categories.length === 0 ? (
+        {loading ? (
+          <div className="grid gap-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} variant="section" className="p-5 md:p-6"><div className="skeleton h-20" /></Card>
+            ))}
+          </div>
+        ) : categories.length === 0 ? (
           <Card padding="lg" className="text-center">
             <div className="mx-auto node-icon text-2xl">
               <Layers className="h-8 w-8" />
             </div>
             <h3 className="mt-4 text-xl font-extrabold text-white">المنتدي لسه جديد — أول قسم ينتظرك</h3>
-            <p className="mx-auto mt-3 max-w-lg text-sm muted">
-          الأقسام بتتضاف من لوحة الإدارة المخصصة للمشرفين، لكن المحتوى الحقيقي بيبدألما أول شخص يفتح موضوع. الـ admin يقدر يضيف الأقسام اللي تناسب جمهور المنتدى.
-            </p>
+            <p className="mx-auto mt-3 max-w-lg text-sm muted">الأقسام بتتضاف من لوحة الإدارة المخصصة للمشرفين، لكن المحتوى الحقيقي بيبدألما أول شخص يفتح موضوع.</p>
             <div className="mt-5 flex flex-wrap justify-center gap-3">
               <Button asChild variant="primary">
-                <Link href="/admin">
-                  <Plus className="h-4 w-4" />
-                  إدارة الأقسام
-                </Link>
+                <Link href="/admin"><Plus className="h-4 w-4" /> إدارة الأقسام</Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href="/t/new">
-                  <MessageSquare className="h-4 w-4" />
-                  اكتب أول موضوع
-                </Link>
+                <Link href="/t/new"><MessageSquare className="h-4 w-4" /> اكتب أول موضوع</Link>
               </Button>
             </div>
           </Card>
@@ -161,16 +161,11 @@ export default async function HomePage() {
                         </div>
                         <p className="node-desc max-w-3xl">{category.description}</p>
                         <div className="node-stats-row">
-                          <span>
-                            الموضوعات: <strong>{category.threads_count}</strong>
-                          </span>
-                          <span>
-                            الردود: <strong>{category.replies_count}</strong>
-                          </span>
+                          <span>الموضوعات: <strong>{category.threads_count}</strong></span>
+                          <span>الردود: <strong>{category.replies_count}</strong></span>
                         </div>
                       </div>
                     </div>
-
                     <div className="meta-pill">
                       ادخل القسم
                       <ArrowLeft className="h-4 w-4" />
@@ -205,10 +200,7 @@ export default async function HomePage() {
         <Card variant="soft" className="p-5">
           <span className="eyebrow">انتشار منظم</span>
           <h2 className="mt-3 text-2xl font-extrabold text-white">كل قسم جديد لازم يفتح باب بحث جديد</h2>
-          <p className="mt-3 text-sm muted">
-            التوسع الحقيقي مش عدد أقسام كبير وخلاص. التوسع الصح إن كل قسم يبقى له جمهور، أسئلة متكررة،
-            وصف واضح، ومواضيع افتتاحية تخليه مفيد من أول يوم.
-          </p>
+          <p className="mt-3 text-sm muted">التوسع الحقيقي مش عدد أقسام كبير وخلاص. التوسع الصح إن كل قسم يبقى له جمهور، أسئلة متكررة، وصف واضح، ومواضيع افتتاحية تخليه مفيد من أول يوم.</p>
           <div className="mt-4 grid gap-2">
             <span className="meta-pill">عنوان قابل للبحث</span>
             <span className="meta-pill">وصف مباشر</span>
@@ -222,57 +214,37 @@ export default async function HomePage() {
               <Sparkles className="h-4 w-4" />
               أحدث النقاشات
             </span>
-            <span className="muted text-sm">{latestThreads?.length ?? 0} موضوع</span>
+            <span className="muted text-sm">{latestThreads.length} موضوع</span>
           </div>
 
           {latestThreads.length === 0 ? (
             <div className="p-8 text-center">
-              <div className="mx-auto node-icon text-xl">
-                <BookOpen className="h-6 w-6" />
-              </div>
+              <div className="mx-auto node-icon text-xl"><BookOpen className="h-6 w-6" /></div>
               <h3 className="mt-3 text-lg font-extrabold text-white">أول نقاش في المنتدى لسه مستنيك</h3>
-              <p className="mx-auto mt-2 max-w-md text-sm muted">
-                أي موضوع تقني عندك — مشكلة، استفسار، أو شرح — ممكن يبقى أول محتوى مفيد في المنتدى.
-              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm muted">أي موضوع تقني عندك — مشكلة، استفسار، أو شرح — ممكن يبقى أول محتوى مفيد في المنتدى.</p>
               <div className="mt-4">
                 <Button asChild variant="primary">
-                  <Link href="/t/new">
-                    <Plus className="h-4 w-4" />
-                    اكتب أول موضوع
-                  </Link>
+                  <Link href="/t/new"><Plus className="h-4 w-4" /> اكتب أول موضوع</Link>
                 </Button>
               </div>
             </div>
           ) : (
             <div>
-              {latestThreads.map((thread, index) => (
+              {latestThreads.map((thread: any, index: number) => (
                 <Link
                   key={thread.id}
                   href={`/t/${thread.slug}`}
                   className="node block no-underline"
-                  style={{
-                    borderBottom:
-                      index < latestThreads.length - 1 ? '1px solid rgba(224, 197, 132, 0.1)' : 'none',
-                  }}
+                  style={{ borderBottom: index < latestThreads.length - 1 ? "1px solid rgba(224, 197, 132, 0.1)" : "none" }}
                 >
                   <div className="node-body">
-                    <div className="node-icon">
-                      <BookOpen className="h-5 w-5" />
-                    </div>
+                    <div className="node-icon"><BookOpen className="h-5 w-5" /></div>
                     <div className="node-main">
                       <div className="node-title">{thread.title}</div>
                       <div className="node-stats-row">
-                        {thread.category && (
-                          <span>
-                            في <strong>{thread.category.name}</strong>
-                          </span>
-                        )}
-                        <span>
-                          المشاهدات: <strong>{thread.views}</strong>
-                        </span>
-                        <span>
-                          الردود: <strong>{thread.replies_count}</strong>
-                        </span>
+                        {thread.categoryName && <span>في <strong>{thread.categoryName}</strong></span>}
+                        <span>المشاهدات: <strong>{thread.views ?? 0}</strong></span>
+                        <span>الردود: <strong>{thread.replies_count ?? 0}</strong></span>
                       </div>
                     </div>
                     <div className="meta-pill">

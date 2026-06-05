@@ -1,41 +1,38 @@
-'use client'
+"use client"
 
-import Link from 'next/link'
-import { Suspense, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { HiLockClosed, HiLogin, HiSparkles } from 'react-icons/hi'
+import Link from "next/link"
+import { Suspense, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { HiLockClosed, HiLogin, HiSparkles } from "react-icons/hi"
+import { signInWithEmailAndPassword } from "firebase/auth"
 
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { auth } from "@/lib/firebase"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSending(true)
-    setError('')
+    setError("")
 
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
-    const data = await res.json()
-
-    if (data.error) {
-      setError(data.error)
+    try {
+      await signInWithEmailAndPassword(auth, email, password)
+      router.push(searchParams.get("next") || "/")
+      router.refresh()
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "بيانات الدخول غير صحيحة"
+      setError(msg)
+    } finally {
       setSending(false)
-      return
     }
-
-    router.push(searchParams.get('next') || data.redirectTo || '/')
-    router.refresh()
   }
 
   return (
@@ -48,7 +45,6 @@ function LoginForm() {
             الحساب هنا ليس مجرد تسجيل دخول. هو مفتاحك لفتح موضوعات جديدة، الرد، وبناء حضور داخل المنتدى
             من غير لف كثير.
           </p>
-
           <div className="mt-6 grid gap-3">
             <div className="surface-soft p-4 text-sm muted">
               <div className="mb-2 flex items-center gap-2 font-bold text-white">
@@ -78,34 +74,22 @@ function LoginForm() {
 
             <div>
               <Label>البريد الإلكتروني</Label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="example@email.com"
-              />
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="example@email.com" />
             </div>
 
             <div>
               <Label>كلمة السر</Label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="اكتب كلمة السر"
-              />
+              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="اكتب كلمة السر" />
             </div>
 
             <button type="submit" disabled={sending} className="btn btn-primary w-full">
               <HiLogin className="text-base" />
-              {sending ? 'جارٍ تسجيل الدخول...' : 'دخول'}
+              {sending ? "جارٍ تسجيل الدخول..." : "دخول"}
             </button>
           </form>
 
           <p className="mt-5 text-sm muted">
-            لا تملك حسابًا؟{' '}
+            لا تملك حسابًا؟{" "}
             <Link href="/register" className="brand-text font-bold hover:opacity-90">
               أنشئ حسابًا من هنا
             </Link>
@@ -118,13 +102,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="content-wrap">
-          <div className="surface-card p-8 text-center text-sm muted">جارٍ تحميل صفحة الدخول...</div>
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="content-wrap"><div className="surface-card p-8 text-center text-sm muted">جارٍ تحميل صفحة الدخول...</div></div>}>
       <LoginForm />
     </Suspense>
   )

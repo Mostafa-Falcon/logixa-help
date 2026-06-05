@@ -1,77 +1,31 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server"
+import { collection, addDoc, getDocs, orderBy, query } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
-import { createServerSupabaseClient } from '@/lib/supabase-server'
-
-function makeSlug(value: string) {
-  return value
-    .trim()
-    .replace(/[^\w\s\u0600-\u06FF-]/g, '')
-    .replace(/[\s_]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .toLowerCase()
-    .slice(0, 90)
+export async function GET() {
+  const snap = await getDocs(query(collection(db, "categories"), orderBy("sort_order")))
+  const categories = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  return NextResponse.json(categories)
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createServerSupabaseClient()
   const body = await req.json()
-
-  const name = String(body.name ?? '').trim()
-  const description = String(body.description ?? '').trim()
-  const icon = String(body.icon ?? '💬').trim() || '💬'
-  const slug = makeSlug(String(body.slug ?? '').trim() || name)
+  const { name, slug, description, icon, sort_order } = body
 
   if (!name || !slug) {
-    return NextResponse.json({ error: 'اسم القسم والرابط مطلوبان' }, { status: 400 })
+    return NextResponse.json({ error: "الاسم والرابط المختصر مطلوبان" }, { status: 400 })
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const ref = await addDoc(collection(db, "categories"), {
+    name,
+    slug,
+    description: description || "",
+    icon: icon || "💬",
+    sort_order: Number(sort_order) || 0,
+    threads_count: 0,
+    replies_count: 0,
+    created_at: new Date().toISOString(),
+  })
 
-  if (!user) {
-    return NextResponse.json({ error: 'يجب تسجيل الدخول' }, { status: 401 })
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin') {
-    return NextResponse.json({ error: 'هذه العملية متاحة للأدمن فقط' }, { status: 403 })
-  }
-
-  const { data: lastCategory } = await supabase
-    .from('categories')
-    .select('sort_order')
-    .order('sort_order', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  const requestedSortOrder = Number(body.sort_order)
-  const sortOrder = Number.isFinite(requestedSortOrder)
-    ? requestedSortOrder
-    : Number(lastCategory?.sort_order ?? 0) + 1
-
-  const { data, error } = await supabase
-    .from('categories')
-    .insert({
-      name,
-      slug,
-      description,
-      icon,
-      sort_order: sortOrder,
-    })
-    .select('*')
-    .single()
-
-  if (error) {
-    const message = error.code === '23505' ? 'هذا الرابط مستخدم بالفعل لقسم آخر' : error.message
-    return NextResponse.json({ error: message }, { status: 500 })
-  }
-
-  return NextResponse.json(data, { status: 201 })
+  return NextResponse.json({ id: ref.id, name, slug })
 }

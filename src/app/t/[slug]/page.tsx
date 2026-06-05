@@ -1,227 +1,135 @@
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import { HiChatAlt2, HiChevronLeft, HiEye, HiHome, HiSparkles } from 'react-icons/hi'
+"use client"
 
-import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { safeQuery, safeRpc, safeSingle } from '@/lib/safe-data'
-import type { Reply, Thread } from '@/lib/types'
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { ArrowLeft, Eye, Home, MessageSquare, ThumbsUp, Clock, CheckCircle } from "lucide-react"
+import { collection, getDocs, query, where, orderBy, doc, getDoc, updateDoc } from "firebase/firestore"
 
-import VoteButtons from '@/components/VoteButtons'
-import ReportButton from '@/components/ReportButton'
-import ReplyForm from './ReplyForm'
+import { db, auth } from "@/lib/firebase"
+import { useAuth } from "@/hooks/useAuth"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { VoteButtons } from "@/components/VoteButtons"
+import ReportButton from "@/components/ReportButton"
+import { PageHeader } from "@/components/ui/page-header"
+import ReplyForm from "./ReplyForm"
 
-export const dynamic = 'force-dynamic'
+export default function ThreadPage() {
+  const { slug } = useParams<{ slug: string }>()
+  const { profile } = useAuth()
+  const [thread, setThread] = useState<any>(null)
+  const [replies, setReplies] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-type ThreadDetails = Thread & {
-  author: { username: string; avatar_url: string } | null
-  category: { name: string; slug: string } | null
-}
+  useEffect(() => {
+    async function load() {
+      const tSnap = await getDocs(query(collection(db, "threads"), where("slug", "==", slug)))
+      if (tSnap.empty) { setLoading(false); return }
+      const t = { id: tSnap.docs[0].id, ...tSnap.docs[0].data() } as { id: string; views?: number; [key: string]: unknown }
+      setThread(t)
 
-type ThreadReply = Reply & {
-  author: { username: string; avatar_url: string } | null
-}
+      await updateDoc(doc(db, "threads", t.id), { views: (t.views ?? 0) + 1 })
 
-export default async function ThreadPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
-  const { slug } = await params
-  const supabase = await createServerSupabaseClient()
+      const rSnap = await getDocs(
+        query(collection(db, "replies"), where("thread_id", "==", t.id), where("status", "==", "visible"), orderBy("created_at")),
+      )
+      setReplies(rSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      setLoading(false)
+    }
+    load()
+  }, [slug])
 
-  const threadData = await safeSingle(
-    supabase.from('threads').select('*, author:author_id(username, avatar_url), category:category_id(name, slug)').eq('slug', slug).single<ThreadDetails>(),
-  )
-
-  if (!threadData) {
-    notFound()
+  function formatDate(d: string) {
+    return new Date(d).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
   }
 
-  const thread = threadData
-
-  await safeRpc(supabase.rpc('increment_thread_views', { thread_id: thread.id }))
-
-  const replies = await safeQuery(
-    supabase.from('replies').select('*, author:author_id(username, avatar_url)').eq('thread_id', thread.id).eq('status', 'visible').order('created_at', { ascending: true }).returns<ThreadReply[]>(),
-    [],
-  )
+  if (loading) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">جارٍ التحميل...</div></div>
+  if (!thread) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">الموضوع غير موجود</div></div>
 
   return (
     <div className="content-wrap space-y-5">
       <div className="breadcrumb">
-        <Link href="/" className="inline-flex items-center gap-1">
-          <HiHome className="text-sm" />
-          الرئيسية
-        </Link>
-        <HiChevronLeft className="text-xs" />
-        {thread.category && (
-          <>
-            <Link href={`/c/${thread.category.slug}`}>{thread.category.name}</Link>
-            <HiChevronLeft className="text-xs" />
-          </>
-        )}
-        <span className="truncate max-w-full md:max-w-[480px]">{thread.title}</span>
+        <Link href="/" className="inline-flex items-center gap-1"><Home className="text-sm" /> الرئيسية</Link>
+        <ArrowLeft className="text-xs" />
+        {thread.categoryName && <Link href={`/c/${thread.categorySlug}`}>{thread.categoryName}</Link>}
+        {thread.categoryName && <ArrowLeft className="text-xs" />}
+        <span className="text-white/80">{thread.title}</span>
       </div>
 
-      <section className="surface-card hero-panel px-5 py-6 md:px-7">
+      <section className="surface-card hero-panel px-5 py-5 md:px-7">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="page-title flex-1 text-2xl md:text-3xl">{thread.title}</h1>
+          <ReportButton targetType="thread" targetId={thread.id} />
+        </div>
+        <div className="meta-row mt-3">
+          <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {thread.views ?? 0} مشاهدة</span>
+          <span className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {thread.replies_count ?? 0} رد</span>
+          <span className="flex items-center gap-1"><ThumbsUp className="h-3.5 w-3.5" /> {thread.votes_count ?? 0} تصويت</span>
+          <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {formatDate(thread.created_at)}</span>
+        </div>
+      </section>
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {thread.is_pinned && <span className="badge badge-accent">موضوع مثبت</span>}
-            {thread.category && <span className="badge badge-brand">{thread.category.name}</span>}
-          </div>
-
-          <h1 className="page-title text-3xl md:text-4xl">{thread.title}</h1>
-
-          <div className="meta-row">
-            <span className="meta-pill">
-              <HiEye className="text-base" />
-              {thread.views} مشاهدة
-            </span>
-            <span className="meta-pill">
-              <HiChatAlt2 className="text-base" />
-              {thread.replies_count} رد
-            </span>
-            <span className="meta-pill">
-              بواسطة <strong>{thread.author?.username ?? 'مستخدم مجهول'}</strong>
-            </span>
-            <span className="meta-pill">
-              {new Date(thread.created_at).toLocaleDateString('ar-EG', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </span>
-            <span className="meta-pill">
-              <VoteButtons targetType="thread" targetId={thread.id} initialVotes={thread.votes_count} initialUserVote={null} />
-            </span>
-            <ReportButton targetType="thread" targetId={thread.id} />
-          </div>
-        </div>
-      </section>
-
-      <section className="surface-card overflow-hidden">
-        <div className="grid gap-0 md:grid-cols-[240px_1fr]">
-          <aside
-            className="border-b p-5 md:border-b-0 md:border-l"
-            style={{ borderColor: 'rgba(224, 197, 132, 0.1)' }}
-          >
-            <div className="flex items-center gap-3 md:flex-col md:items-start">
-              <div
-                className="flex h-14 w-14 items-center justify-center rounded-lg text-lg font-extrabold"
-                style={{
-                  background:
-                    'linear-gradient(135deg, rgba(88, 196, 170, 0.2), rgba(224, 182, 92, 0.16))',
-                  border: '1px solid rgba(224, 197, 132, 0.14)',
-                }}
-              >
-                {(thread.author?.username ?? '?').slice(0, 1)}
-              </div>
-              <div className="space-y-1">
-                <div className="text-lg font-extrabold text-white">
-                  {thread.author?.username ?? 'مستخدم مجهول'}
-                </div>
-                <div className="text-sm muted">صاحب الموضوع</div>
+          <Card padding="lg">
+            <div className="flex gap-4">
+              <VoteButtons targetType="thread" targetId={thread.id} votesCount={thread.votes_count ?? 0} />
+              <div className="prose-content min-w-0 flex-1">
+                <p className="whitespace-pre-wrap text-sm leading-8">{thread.body}</p>
               </div>
             </div>
-
-            <div className="mt-5 space-y-3 text-sm muted">
-              <div className="surface-soft p-3">
-                الصفحة دي مهمة لأنها غالبًا هتبقى أول نقطة دخول من البحث، فالمحتوى لازم يبان واضح وسهل
-                الفهم من أول نظرة.
-              </div>
-              <div className="meta-row">
-                <span className="badge badge-brand">قراءة مريحة</span>
-                <span className="badge badge-accent">قابل للفهرسة</span>
-              </div>
+            <div className="mt-4 flex items-center gap-2 border-t pt-4" style={{ borderColor: "rgba(224, 197, 132, 0.1)" }}>
+              <div className="avatar h-7 w-7 text-xs">{(thread.authorUsername ?? "?").slice(0, 1)}</div>
+              <span className="text-sm muted">{thread.authorUsername ?? "زائر"}</span>
             </div>
-          </aside>
+          </Card>
 
-          <article className="p-5 md:p-7">
-            <div className="prose-content whitespace-pre-line text-base leading-8">{thread.body}</div>
-          </article>
-        </div>
-      </section>
-
-      <section className="block-container">
-        <div className="block-header">
-          <span>الردود ({replies?.length ?? 0})</span>
-          <span className="muted text-sm">كل رد واضح ومفصول لتسهيل القراءة</span>
-        </div>
-
-        {!replies || replies.length === 0 ? (
-          <div className="p-8 text-center">
-            <div className="mx-auto node-icon text-xl">
-              <HiSparkles />
+          <div className="block-container">
+            <div className="block-header">
+              <span><MessageSquare className="ml-1 inline h-4 w-4" />{replies.length} ردود</span>
             </div>
-            <h2 className="mt-4 text-xl font-extrabold text-white">لسه مفيش ردود</h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm muted">
-              أول رد هنا ممكن يبقى أهم من الموضوع نفسه، لأنه غالبًا هو الحل اللي الزائر بيدور عليه.
-            </p>
-          </div>
-        ) : (
-          <div>
-            {replies.map((reply, index) => (
-              <div
-                key={reply.id}
-                className="p-5 md:p-6"
-                style={{
-                  borderBottom:
-                    index < replies.length - 1 ? '1px solid rgba(224, 197, 132, 0.1)' : 'none',
-                }}
-              >
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div
-                        className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-extrabold"
-                        style={{
-                          background:
-                            'linear-gradient(135deg, rgba(88, 196, 170, 0.2), rgba(224, 182, 92, 0.16))',
-                          border: '1px solid rgba(224, 197, 132, 0.14)',
-                        }}
-                      >
-                        {(reply.author?.username ?? '?').slice(0, 1)}
+            {replies.length === 0 ? (
+              <div className="p-6 text-center text-sm muted">لا توجد ردود بعد. كن أول من يرد!</div>
+            ) : (
+              replies.map((reply: any) => (
+                <div key={reply.id} className="node border-b last:border-0" style={{ borderColor: "rgba(224, 197, 132, 0.08)" }}>
+                  <div className="node-body">
+                    <VoteButtons targetType="reply" targetId={reply.id} votesCount={reply.votes_count ?? 0} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="avatar h-6 w-6 text-xs">{(reply.authorUsername ?? "?").slice(0, 1)}</div>
+                        <span className="text-sm font-bold text-white">{reply.authorUsername ?? "زائر"}</span>
+                        <span className="text-xs muted">{formatDate(reply.created_at)}</span>
+                        {reply.is_best_answer && <Badge variant="success"><CheckCircle className="h-3 w-3" /> أفضل إجابة</Badge>}
                       </div>
-                      <div className="text-sm font-bold text-white">
-                        {reply.author?.username ?? 'مستخدم مجهول'}
-                      </div>
-                      <span className="text-sm muted">
-                        {new Date(reply.created_at).toLocaleDateString('ar-EG', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
-                      </span>
-                      {reply.is_best_answer && <span className="badge badge-success">أفضل إجابة</span>}
+                      <div className="prose-content text-sm leading-8 whitespace-pre-wrap">{reply.body}</div>
+                      <div className="mt-3"><ReportButton targetType="reply" targetId={reply.id} /></div>
                     </div>
-
-                    <p className="whitespace-pre-line text-sm leading-8 text-slate-100/90">
-                      {reply.body}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="meta-pill">#{index + 1}</span>
-                    <VoteButtons targetType="reply" targetId={reply.id} initialVotes={reply.votes_count} initialUserVote={null} />
-                    <ReportButton targetType="reply" targetId={reply.id} />
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
-        )}
-      </section>
 
-      <section className="surface-card p-5 md:p-6">
-        <div className="mb-4">
-          <span className="eyebrow">أضف ردًا مفيدًا</span>
-          <h2 className="mt-2 text-2xl font-extrabold text-white">شارك بحل واضح ومباشر</h2>
-          <p className="mt-2 text-sm muted">
-            الردود القصيرة أحيانًا تنفع، لكن الرد اللي فيه خطوة أو سبب أو ملاحظة غالبًا هو اللي بيكسب.
-          </p>
+          <Card padding="md">
+            <h3 className="mb-3 text-base font-extrabold text-white">اكتب ردك</h3>
+            <ReplyForm threadId={thread.id} />
+          </Card>
         </div>
-        <ReplyForm threadId={thread.id} />
-      </section>
+
+        <aside className="space-y-4">
+          <Card variant="soft" padding="md">
+            <h4 className="mb-3 text-sm font-bold text-white">حول الموضوع</h4>
+            <div className="space-y-2 text-xs muted">
+              <p>عدد المشاهدات: {thread.views ?? 0}</p>
+              <p>الردود: {thread.replies_count ?? 0}</p>
+              <p>التصويتات: {thread.votes_count ?? 0}</p>
+            </div>
+          </Card>
+        </aside>
+      </div>
     </div>
   )
 }

@@ -1,195 +1,90 @@
-import { redirect } from 'next/navigation'
-import { ShieldCheck } from 'lucide-react'
+"use client"
 
-import ReportActions from '@/app/moderate/ReportActions'
-import { PageHeader } from '@/components/ui/page-header'
-import { getCurrentUserWithProfile } from '@/lib/auth'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { safeCount, safeQuery } from '@/lib/safe-data'
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { ShieldCheck } from "lucide-react"
+import { collection, getDocs, query, orderBy, doc, updateDoc } from "firebase/firestore"
 
-interface Report {
-  id: number
-  reporter_id: string
-  target_type: 'thread' | 'reply'
-  target_id: number
-  reason: string
-  status: 'open' | 'resolved' | 'dismissed'
-  reviewed_by: string | null
-  reviewed_at: string | null
-  created_at: string
-  reporter: { username: string; avatar_url: string } | null
-}
+import { db } from "@/lib/firebase"
+import { useAuth } from "@/hooks/useAuth"
+import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/ui/page-header"
 
-export default async function ModeratePage() {
-  const { user, profile } = await getCurrentUserWithProfile()
+export default function ModeratePage() {
+  const { profile, loading: authLoading } = useAuth()
+  const router = useRouter()
+  const [reports, setReports] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  if (!user || (profile?.role !== 'admin' && profile?.role !== 'moderator')) {
-    redirect('/')
+  useEffect(() => {
+    if (authLoading) return
+    if (!profile || (profile.role !== "admin" && profile.role !== "moderator")) { router.push("/"); return }
+
+    async function load() {
+      const snap = await getDocs(query(collection(db, "reports"), orderBy("created_at", "desc")))
+      setReports(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      setLoading(false)
+    }
+    load()
+  }, [profile, authLoading, router])
+
+  async function updateStatus(reportId: string, status: string) {
+    await updateDoc(doc(db, "reports", reportId), { status, reviewed_at: new Date().toISOString() })
+    setReports((prev) => prev.map((r: any) => r.id === reportId ? { ...r, status } : r))
   }
 
-  const supabase = await createServerSupabaseClient()
+  if (authLoading || loading) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">جارٍ التحميل...</div></div>
 
-  const reports = await safeQuery<Report[]>(
-    supabase
-      .from('reports')
-      .select('*, reporter:profiles!reporter_id(username, avatar_url)')
-      .order('created_at', { ascending: false })
-      .returns<Report[]>(),
-    [],
-  )
-
-  const totalReports = await safeCount(
-    supabase.from('reports').select('*', { count: 'exact', head: true }),
-  )
-
-  const openReports = await safeCount(
-    supabase
-      .from('reports')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'open'),
-  )
-
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-
-  const resolvedToday = await safeCount(
-    supabase
-      .from('reports')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'resolved')
-      .gte('reviewed_at', todayStart.toISOString()),
-  )
-
-  const openReportsList = reports.filter((r) => r.status === 'open')
-  const resolvedReportsList = reports.filter((r) => r.status !== 'open')
+  const openReports = reports.filter((r: any) => r.status === "open")
+  const resolved = reports.filter((r: any) => r.status !== "open")
 
   return (
     <div className="content-wrap space-y-5">
-      <PageHeader
-        eyebrow="لوحة الإشراف"
-        title="الإشراف على البلاغات"
-        description="راجع البلاغات المقدمة من الأعضاء، واتخذ الإجراء المناسب لكل مخالفة."
-        icon={<ShieldCheck className="h-6 w-6" />}
-      />
-
-      <section className="stat-grid">
-        <div className="stat-card">
-          <div className="stat-label">إجمالي البلاغات</div>
-          <div className="stat-value">{totalReports}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">بلاغات مفتوحة</div>
-          <div className="stat-value">{openReports}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">تم الحل اليوم</div>
-          <div className="stat-value">{resolvedToday}</div>
-        </div>
-      </section>
+      <PageHeader eyebrow="لوحة الإشراف" title="الإشراف على البلاغات" description="راجع البلاغات المقدمة من الأعضاء، واتخذ الإجراء المناسب." icon={<ShieldCheck className="h-6 w-6" />} />
 
       <section className="block-container">
         <div className="block-header">
-          <span>بلاغات مفتوحة</span>
-          <span className="muted text-sm">{openReportsList.length} بلاغ</span>
+          <span>بلاغات مفتوحة ({openReports.length})</span>
         </div>
-
-        {openReportsList.length === 0 ? (
-          <div className="p-6 text-sm muted">لا توجد بلاغات مفتوحة حالياً.</div>
+        {openReports.length === 0 ? (
+          <div className="p-6 text-sm muted">لا توجد بلاغات مفتوحة.</div>
         ) : (
-          <div>
-            {openReportsList.map((report, index) => (
-              <div
-                key={report.id}
-                className="node"
-                style={{
-                  borderBottom:
-                    index < openReportsList.length - 1
-                      ? '1px solid rgba(224, 197, 132, 0.1)'
-                      : 'none',
-                }}
-              >
-                <div className="node-body">
-                  <div className="node-main">
-                    <div className="node-title">
-                      {report.target_type === 'thread' ? '📄 موضوع' : '💬 رد'}
-                      {' — '}
-                      {report.reason.slice(0, 80)}
-                      {report.reason.length > 80 ? '...' : ''}
-                    </div>
-                    <div className="node-stats-row">
-                      <span>
-                        المُبلّغ:{' '}
-                        <strong>
-                          {report.reporter?.username ?? 'غير معروف'}
-                        </strong>
-                      </span>
-                      <span>
-                        {new Date(report.created_at).toLocaleDateString('ar-EG', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
-                    </div>
+          openReports.map((r: any) => (
+            <div key={r.id} className="node" style={{ borderBottom: "1px solid rgba(224, 197, 132, 0.1)" }}>
+              <div className="node-body">
+                <div className="node-main">
+                  <div className="node-title">{r.target_type === "thread" ? "📄 موضوع" : "💬 رد"} — {r.reason?.slice(0, 80)}</div>
+                  <div className="node-stats-row">
+                    <span>{new Date(r.created_at).toLocaleDateString("ar-EG")}</span>
                   </div>
-                  <ReportActions reportId={report.id} status={report.status} />
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="primary" onClick={() => updateStatus(r.id, "resolved")}>حل</Button>
+                  <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "dismissed")}>رفض</Button>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))
         )}
       </section>
 
-      {resolvedReportsList.length > 0 && (
+      {resolved.length > 0 && (
         <section className="block-container">
-          <div className="block-header">
-            <span>بلاغات تمت معالجتها</span>
-            <span className="muted text-sm">
-              {resolvedReportsList.length} بلاغ
-            </span>
-          </div>
-          <div>
-            {resolvedReportsList.map((report, index) => (
-              <div
-                key={report.id}
-                className="node"
-                style={{
-                  borderBottom:
-                    index < resolvedReportsList.length - 1
-                      ? '1px solid rgba(224, 197, 132, 0.1)'
-                      : 'none',
-                }}
-              >
-                <div className="node-body">
-                  <div className="node-main">
-                    <div className="node-title">
-                      {report.target_type === 'thread' ? '📄 موضوع' : '💬 رد'}
-                      {' — '}
-                      {report.reason.slice(0, 80)}
-                      {report.reason.length > 80 ? '...' : ''}
-                    </div>
-                    <div className="node-stats-row">
-                      <span>
-                        المُبلّغ:{' '}
-                        <strong>
-                          {report.reporter?.username ?? 'غير معروف'}
-                        </strong>
-                      </span>
-                      <span
-                        className={
-                          report.status === 'resolved'
-                            ? 'text-green-400'
-                            : 'text-amber-400'
-                        }
-                      >
-                        {report.status === 'resolved' ? 'تم الحل' : 'مرفوض'}
-                      </span>
-                    </div>
+          <div className="block-header"><span>تمت المعالجة ({resolved.length})</span></div>
+          {resolved.map((r: any) => (
+            <div key={r.id} className="node" style={{ borderBottom: "1px solid rgba(224, 197, 132, 0.1)" }}>
+              <div className="node-body">
+                <div className="node-main">
+                  <div className="node-title">{r.reason?.slice(0, 80)}</div>
+                  <div className="node-stats-row">
+                    <span className={r.status === "resolved" ? "text-green-400" : "text-amber-400"}>
+                      {r.status === "resolved" ? "تم الحل" : "مرفوض"}
+                    </span>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </section>
       )}
     </div>

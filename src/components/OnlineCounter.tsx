@@ -1,38 +1,29 @@
-'use client'
+"use client"
 
-import { useEffect, useState } from 'react'
-
-import { cn } from '@/lib/utils'
+import { useEffect, useState } from "react"
 
 export function OnlineCounter() {
-  const [count, setCount] = useState<number | null>(null)
+  const [count, setCount] = useState(0)
 
   useEffect(() => {
     async function fetchOnline() {
       try {
-        const res = await fetch('/api/session', { method: 'POST' })
-        if (!res.ok) return
+        const res = await fetch("/api/session")
         const data = await res.json()
-        setCount(data.online ?? null)
-      } catch {
-        // ignore
-      }
+        setCount(data.online_count ?? 0)
+      } catch {}
     }
-
     fetchOnline()
-    const interval = setInterval(fetchOnline, 60000)
+    const interval = setInterval(fetchOnline, 30000)
     return () => clearInterval(interval)
   }, [])
 
-  if (count === null) return null
+  if (count === 0) return null
 
   return (
-    <div className="flex items-center gap-2 text-xs muted">
-      <span className="relative flex h-2 w-2">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400/60" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
-      </span>
-      <span>{count} متصل الآن</span>
-    </div>
+    <span className="flex items-center gap-1.5 text-xs muted">
+      <span className="h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]" />
+      {count}
+    </span>
   )
 }

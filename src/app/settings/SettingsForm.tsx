@@ -1,107 +1,67 @@
-'use client'
+"use client"
 
-import { useEffect, useState } from 'react'
-import { FileText, Save, User } from 'lucide-react'
-import { toast } from 'sonner'
+import { useEffect, useState } from "react"
+import { FileText, Save, User } from "lucide-react"
+import { doc, getDoc, updateDoc } from "firebase/firestore"
+import { toast } from "sonner"
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
+import { db } from "@/lib/firebase"
+import { useAuth } from "@/hooks/useAuth"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 
 export default function SettingsForm() {
-  const [displayName, setDisplayName] = useState('')
-  const [bio, setBio] = useState('')
+  const { profile, loading } = useAuth()
+  const [displayName, setDisplayName] = useState("")
+  const [bio, setBio] = useState("")
   const [sending, setSending] = useState(false)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch('/api/profile')
-        if (!res.ok) throw new Error('فشل تحميل الملف الشخصي')
-        const data = await res.json()
-        setDisplayName(data.profile?.display_name ?? '')
-        setBio(data.profile?.bio ?? '')
-      } catch {
-        toast.error('تعذر تحميل بيانات الملف الشخصي')
-      } finally {
-        setLoading(false)
-      }
+    if (profile) {
+      setDisplayName(profile.display_name ?? "")
+      setBio(profile.bio ?? "")
     }
-
-    load()
-  }, [])
+  }, [profile])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!profile) return
     setSending(true)
-
     try {
-      const res = await fetch('/api/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ display_name: displayName, bio }),
+      await updateDoc(doc(db, "profiles", profile.id), {
+        display_name: displayName,
+        bio,
+        updated_at: new Date().toISOString(),
       })
-
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'حدث خطأ أثناء الحفظ')
-      }
-
-      toast.success('تم تحديث الملف الشخصي بنجاح')
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'حدث خطأ غير متوقع')
+      toast.success("تم تحديث الملف الشخصي")
+    } catch {
+      toast.error("حدث خطأ أثناء الحفظ")
     } finally {
       setSending(false)
     }
   }
 
-  if (loading) {
-    return (
-      <section className="surface-card p-5 md:p-7">
-        <div className="text-sm muted">جارٍ تحميل الإعدادات...</div>
-      </section>
-    )
-  }
+  if (loading) return <section className="surface-card p-5 md:p-7"><div className="text-sm muted">جارٍ التحميل...</div></section>
 
   return (
     <section className="surface-card p-5 md:p-7">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <Label htmlFor="display_name">
-            <User className="ml-1 inline-block h-4 w-4" />
-            الاسم المعروض
-          </Label>
-          <Input
-            id="display_name"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="الاسم الذي يظهر للجميع"
-            maxLength={60}
-          />
+          <Label htmlFor="display_name"><User className="ml-1 inline h-4 w-4" /> الاسم المعروض</Label>
+          <Input id="display_name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="الاسم الذي يظهر للجميع" maxLength={60} />
           <p className="mt-1 text-xs muted">اسمك المعروض داخل المنتدى، اختياري.</p>
         </div>
 
         <div>
-          <Label htmlFor="bio">
-            <FileText className="ml-1 inline-block h-4 w-4" />
-            نبذة عنك
-          </Label>
-          <Textarea
-            id="bio"
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            className="min-h-[120px]"
-            placeholder="اكتب نبذة مختصرة عن نفسك، تخصصك، أو مجالك..."
-            maxLength={500}
-          />
+          <Label htmlFor="bio"><FileText className="ml-1 inline h-4 w-4" /> نبذة عنك</Label>
+          <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} className="min-h-[120px]" placeholder="نبذة مختصرة عن نفسك" maxLength={500} />
           <p className="mt-1 text-xs muted">أقل من 500 حرف. تظهر في ملفك الشخصي.</p>
         </div>
 
         <Button type="submit" variant="primary" disabled={sending} className="w-full md:w-auto">
-          <Save className="h-4 w-4" />
-          {sending ? 'جارٍ الحفظ...' : 'حفظ التغييرات'}
+          <Save className="h-4 w-4" /> {sending ? "جارٍ الحفظ..." : "حفظ التغييرات"}
         </Button>
       </form>
     </section>

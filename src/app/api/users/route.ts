@@ -1,29 +1,9 @@
-import { NextResponse } from 'next/server'
-
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextResponse } from "next/server"
+import { collection, getDocs, orderBy, query, limit } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
 export async function GET() {
-  const supabase = await createServerSupabaseClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'غير مسجل' }, { status: 401 })
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  return NextResponse.json(
-    { user, profile },
-    {
-      headers: {
-        'Cache-Control': 'no-store',
-      },
-    }
-  )
+  const snap = await getDocs(query(collection(db, "profiles"), orderBy("created_at", "desc"), limit(50)))
+  const users = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  return NextResponse.json({ users })
 }

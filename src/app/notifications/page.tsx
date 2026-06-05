@@ -1,36 +1,19 @@
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import {
-  Bell,
-  BellOff,
-  ChevronLeft,
-  Home,
-  MessageSquare,
-  ShieldCheck,
-  ThumbsUp,
-  Trophy,
-} from 'lucide-react'
+"use client"
 
-import { getCurrentUserWithProfile } from '@/lib/auth'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { safeQuery } from '@/lib/safe-data'
-import { Button } from '@/components/ui/button'
-import { PageHeader } from '@/components/ui/page-header'
+import Link from "next/link"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { Bell, BellOff, ChevronLeft, Home, MessageSquare, ShieldCheck, ThumbsUp, Trophy } from "lucide-react"
+import { collection, getDocs, query, where, orderBy, limit, doc, writeBatch } from "firebase/firestore"
+import { CheckCheck } from "lucide-react"
+import { toast } from "sonner"
 
-import MarkAllReadButton from './MarkAllReadButton'
+import { db } from "@/lib/firebase"
+import { useAuth } from "@/hooks/useAuth"
+import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/ui/page-header"
 
-type Notification = {
-  id: number
-  user_id: string
-  type: 'reply' | 'vote' | 'best_answer' | 'report_update' | 'mod_action'
-  title: string
-  body: string | null
-  link: string | null
-  is_read: boolean
-  created_at: string
-}
-
-const notificationIcon: Record<string, React.ReactNode> = {
+const iconMap: Record<string, React.ReactNode> = {
   reply: <MessageSquare className="h-5 w-5" />,
   vote: <ThumbsUp className="h-5 w-5" />,
   best_answer: <Trophy className="h-5 w-5" />,
@@ -38,35 +21,48 @@ const notificationIcon: Record<string, React.ReactNode> = {
   mod_action: <ShieldCheck className="h-5 w-5" />,
 }
 
-export default async function NotificationsPage() {
-  const { user } = await getCurrentUserWithProfile()
+export default function NotificationsPage() {
+  const { profile, loading: authLoading } = useAuth()
+  const router = useRouter()
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  if (!user) {
-    redirect('/login?next=/notifications')
+  useEffect(() => {
+    if (authLoading) return
+    if (!profile) { router.push("/login?next=/notifications"); return }
+    const pid = profile.id
+
+    async function load() {
+      const snap = await getDocs(
+        query(collection(db, "notifications"), where("user_id", "==", pid), orderBy("created_at", "desc"), limit(50)),
+      )
+      setNotifications(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      setLoading(false)
+    }
+    load()
+  }, [profile, authLoading, router])
+
+  async function markAllRead() {
+    try {
+      const batch = writeBatch(db)
+      notifications.forEach((n: any) => {
+        if (!n.is_read) batch.update(doc(db, "notifications", n.id), { is_read: true })
+      })
+      await batch.commit()
+      setNotifications((prev: any[]) => prev.map((n: any) => ({ ...n, is_read: true })))
+      toast.success("تم تحديد الكل كمقروء")
+    } catch {
+      toast.error("حدث خطأ")
+    }
   }
 
-  const supabase = await createServerSupabaseClient()
-
-  const notifications = await safeQuery<Notification[]>(
-    supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(50)
-      .returns<Notification[]>(),
-    [],
-  )
-
-  const unreadCount = notifications.filter((n) => !n.is_read).length
+  const unreadCount = notifications.filter((n: any) => !n.is_read).length
+  if (authLoading || loading) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">جارٍ التحميل...</div></div>
 
   return (
     <div className="content-wrap space-y-5">
       <div className="breadcrumb">
-        <Link href="/" className="inline-flex items-center gap-1">
-          <Home className="h-4 w-4" />
-          الرئيسية
-        </Link>
+        <Link href="/" className="inline-flex items-center gap-1"><Home className="h-4 w-4" /> الرئيسية</Link>
         <ChevronLeft className="h-3 w-3" />
         <span>الإشعارات</span>
       </div>
@@ -74,11 +70,9 @@ export default async function NotificationsPage() {
       <PageHeader
         eyebrow="الإشعارات"
         title={`عندك ${unreadCount} إشعار غير مقروء`}
-        description="كل اللي حصل على موضوعاتك وردودك — ردود جديدة، تصويتات، وأوسمة أفضل إجابة."
+        description="كل اللي حصل على موضوعاتك وردودك"
         icon={<Bell className="h-full w-full" />}
-        actions={
-          unreadCount > 0 ? <MarkAllReadButton /> : null
-        }
+        actions={unreadCount > 0 ? <Button type="button" variant="outline" onClick={markAllRead}><CheckCheck className="h-4 w-4" /> تحديد الكل كمقروء</Button> : null}
       />
 
       <section className="block-container">
@@ -90,29 +84,37 @@ export default async function NotificationsPage() {
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center gap-3 p-12 text-center">
             <BellOff className="text-3xl text-text-dim" />
-            <p className="text-sm muted">مافيش إشعارات جديدة. هتلاقي هنا كل اللي يحصل على موضوعاتك.</p>
+            <p className="text-sm muted">مافيش إشعارات جديدة.</p>
           </div>
         ) : (
           <div>
-            {notifications.map((notification, index) => (
-              <div
-                key={notification.id}
-                className="node block"
-                style={{
-                  borderBottom:
-                    index < notifications.length - 1
-                      ? '1px solid rgba(224, 197, 132, 0.1)'
-                      : 'none',
-                  opacity: notification.is_read ? 0.6 : 1,
-                }}
-              >
-                {notification.link ? (
-                  <Link href={notification.link} className="node-body no-underline">
-                    <NotificationContent notification={notification} />
+            {notifications.map((n: any, i: number) => (
+              <div key={n.id} className="node block"
+                style={{ borderBottom: i < notifications.length - 1 ? "1px solid rgba(224, 197, 132, 0.1)" : "none", opacity: n.is_read ? 0.6 : 1 }}>
+                {n.link ? (
+                  <Link href={n.link} className="node-body no-underline">
+                    <div className="node-icon" style={{ color: n.is_read ? "rgba(224, 197, 132, 0.4)" : "rgba(224, 182, 92, 0.9)" }}>
+                      {iconMap[n.type] ?? <Bell className="h-5 w-5" />}
+                    </div>
+                    <div className="node-main">
+                      <div className="node-title" style={{ fontWeight: n.is_read ? 400 : 700 }}>{n.title}</div>
+                      {n.body && <div className="node-desc">{n.body}</div>}
+                      <div className="node-stats-row">
+                        <span className="text-xs muted">
+                          {new Date(n.created_at).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "numeric" })}
+                        </span>
+                      </div>
+                    </div>
                   </Link>
                 ) : (
                   <div className="node-body">
-                    <NotificationContent notification={notification} />
+                    <div className="node-icon" style={{ color: n.is_read ? "rgba(224, 197, 132, 0.4)" : "rgba(224, 182, 92, 0.9)" }}>
+                      {iconMap[n.type] ?? <Bell className="h-5 w-5" />}
+                    </div>
+                    <div className="node-main">
+                      <div className="node-title" style={{ fontWeight: n.is_read ? 400 : 700 }}>{n.title}</div>
+                      {n.body && <div className="node-desc">{n.body}</div>}
+                    </div>
                   </div>
                 )}
               </div>
@@ -121,44 +123,5 @@ export default async function NotificationsPage() {
         )}
       </section>
     </div>
-  )
-}
-
-function NotificationContent({ notification }: { notification: Notification }) {
-  return (
-    <>
-      <div
-        className="node-icon"
-        style={{
-          color: notification.is_read
-            ? 'rgba(224, 197, 132, 0.4)'
-            : 'rgba(224, 182, 92, 0.9)',
-        }}
-      >
-        {notificationIcon[notification.type] ?? <Bell className="h-5 w-5" />}
-      </div>
-      <div className="node-main">
-        <div
-          className="node-title"
-          style={{
-            fontWeight: notification.is_read ? 400 : 700,
-          }}
-        >
-          {notification.title}
-        </div>
-        {notification.body && <div className="node-desc">{notification.body}</div>}
-        <div className="node-stats-row">
-          <span className="text-xs muted">
-            {new Date(notification.created_at).toLocaleDateString('ar-EG', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-              hour: 'numeric',
-              minute: 'numeric',
-            })}
-          </span>
-        </div>
-      </div>
-    </>
   )
 }

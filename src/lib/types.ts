@@ -4,7 +4,7 @@ export interface Profile {
   display_name: string
   avatar_url: string
   bio: string
-  role: 'member' | 'trusted' | 'moderator' | 'admin'
+  role: "member" | "trusted" | "moderator" | "admin"
   reputation: number
   threads_count: number
   replies_count: number
@@ -12,7 +12,7 @@ export interface Profile {
 }
 
 export interface Category {
-  id: number
+  id: string
   name: string
   slug: string
   description: string
@@ -24,39 +24,43 @@ export interface Category {
 }
 
 export interface Thread {
-  id: number
-  category_id: number
+  id: string
+  category_id: string
   author_id: string
   title: string
   slug: string
   body: string
   is_pinned: boolean
   is_locked: boolean
+  status: "published" | "pending" | "hidden"
   views: number
   replies_count: number
   votes_count: number
-  best_answer_id: number | null
+  best_answer_id: string | null
   created_at: string
   updated_at: string
-  author?: Pick<Profile, 'username' | 'avatar_url'>
-  category?: Pick<Category, 'name' | 'slug'>
-  tags?: string[]
+  authorUsername?: string
+  authorAvatarUrl?: string
+  categoryName?: string
+  categorySlug?: string
 }
 
 export interface Reply {
-  id: number
-  thread_id: number
+  id: string
+  thread_id: string
   author_id: string
   body: string
   is_best_answer: boolean
+  status: "visible" | "hidden"
   votes_count: number
   created_at: string
   updated_at: string
-  author?: Pick<Profile, 'username' | 'avatar_url'>
+  authorUsername?: string
+  authorAvatarUrl?: string
 }
 
 export interface Tag {
-  id: number
+  id: string
   name: string
   slug: string
   threads_count: number

@@ -1,155 +1,101 @@
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import { HiArrowLeft, HiChatAlt2, HiChevronLeft, HiHome, HiPencilAlt } from 'react-icons/hi'
+"use client"
 
-import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { safeQuery, safeSingle } from '@/lib/safe-data'
-import type { Category, Thread } from '@/lib/types'
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { ArrowLeft, BookOpen, MessageSquare, Plus, Sparkles } from "lucide-react"
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore"
 
-type CategoryThread = Thread & {
-  author: { username: string; avatar_url: string } | null
-}
+import { db } from "@/lib/firebase"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { PageHeader } from "@/components/ui/page-header"
 
-export default async function CategoryPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
-  const { slug } = await params
-  const supabase = await createServerSupabaseClient()
+export default function CategoryPage() {
+  const { slug } = useParams<{ slug: string }>()
+  const [category, setCategory] = useState<any>(null)
+  const [threads, setThreads] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const category = await safeSingle(
-    supabase.from('categories').select('*').eq('slug', slug).single<Category>(),
-  )
+  useEffect(() => {
+    async function load() {
+      const catSnap = await getDocs(query(collection(db, "categories"), where("slug", "==", slug)))
+      if (catSnap.empty) { setLoading(false); return }
+      const cat = { id: catSnap.docs[0].id, ...catSnap.docs[0].data() }
+      setCategory(cat)
 
-  if (!category) {
-    notFound()
-  }
+      const tSnap = await getDocs(
+        query(collection(db, "threads"), where("category_id", "==", cat.id), where("status", "==", "published"), orderBy("created_at", "desc")),
+      )
+      setThreads(tSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      setLoading(false)
+    }
+    load()
+  }, [slug])
 
-  const threads = await safeQuery(
-    supabase.from('threads').select('*, author:author_id(username, avatar_url)').eq('category_id', category.id).eq('status', 'published').order('is_pinned', { ascending: false }).order('created_at', { ascending: false }).returns<CategoryThread[]>(),
-    [],
-  )
+  if (loading) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">جارٍ التحميل...</div></div>
+  if (!category) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">القسم غير موجود</div></div>
 
   return (
     <div className="content-wrap space-y-5">
-      <div className="breadcrumb">
-        <Link href="/" className="inline-flex items-center gap-1">
-          <HiHome className="text-sm" />
-          الرئيسية
-        </Link>
-        <HiChevronLeft className="text-xs" />
+      <PageHeader
+        eyebrow={`${category.icon} ${category.name}`}
+        title={category.description}
+        description={`${category.threads_count ?? 0} موضوع · ${category.replies_count ?? 0} رد`}
+        actions={
+          <Button asChild variant="primary">
+            <Link href={`/t/new?cat=${category.id}`}>
+              <Plus className="h-4 w-4" />
+              أضف موضوعًا جديدًا
+            </Link>
+          </Button>
+        }
+      />
+
+      <div className="flex items-center gap-2 text-sm breadcrumb">
+        <Link href="/">الرئيسية</Link>
+        <span className="text-xs opacity-50">/</span>
         <span>{category.name}</span>
       </div>
 
-      <section className="surface-card hero-panel px-5 py-6 md:px-7">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3">
-            <span className="eyebrow">قسم متخصص داخل المنتدى</span>
-            <div className="flex items-center gap-3">
-              <div className="node-icon text-xl">{category.icon}</div>
-              <div>
-                <h1 className="page-title text-3xl md:text-4xl">{category.name}</h1>
-                <p className="mt-2 max-w-3xl page-desc">{category.description}</p>
-              </div>
-            </div>
-            <div className="meta-row">
-              <span className="meta-pill">الموضوعات: {category.threads_count}</span>
-              <span className="meta-pill">الردود: {category.replies_count}</span>
-            </div>
+      {threads.length === 0 ? (
+        <Card padding="lg" className="text-center">
+          <Sparkles className="mx-auto h-10 w-10 accent-text" />
+          <h3 className="mt-3 text-lg font-extrabold text-white">لا توجد موضوعات في هذا القسم بعد</h3>
+          <p className="mt-2 text-sm muted">كن أول من يكتب موضوعًا في هذا القسم</p>
+          <div className="mt-4">
+            <Button asChild variant="primary">
+              <Link href={`/t/new?cat=${category.id}`}><Plus className="h-4 w-4" /> اكتب أول موضوع</Link>
+            </Button>
           </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Link href={`/t/new?cat=${category.id}`} className="btn btn-primary">
-              <HiPencilAlt className="text-base" />
-              اسأل في هذا القسم
-            </Link>
-            <Link href="/search" className="btn btn-outline">
-              استكشف حلولًا مشابهة
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {!threads || threads.length === 0 ? (
-        <section className="surface-card p-8 text-center">
-          <div className="mx-auto node-icon text-xl">
-            <HiChatAlt2 />
-          </div>
-          <h2 className="mt-4 text-xl font-extrabold text-white">لسه مفيش أسئلة هنا</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm muted">
-            القسم جاهز، لكن أول موضوع فيه لسه مستني أول حد يبدأ. لو سؤالك هنا، افتحه مباشرة وخلي الصفحة
-            دي تبدأ تتحرك.
-          </p>
-          <div className="mt-5">
-            <Link href={`/t/new?cat=${category.id}`} className="btn btn-primary">
-              <HiPencilAlt className="text-base" />
-              افتح أول سؤال
-            </Link>
-          </div>
-        </section>
+        </Card>
       ) : (
-        <section className="block-container">
+        <div className="block-container">
           <div className="block-header">
-            <span>أحدث الموضوعات في القسم</span>
+            <span><Sparkles className="ml-1 inline h-4 w-4" />الموضوعات</span>
             <span className="muted text-sm">{threads.length} موضوع</span>
           </div>
-
-          <div>
-            {threads.map((thread, index) => (
-              <Link
-                key={thread.id}
-                href={`/t/${thread.slug}`}
-                className="node block no-underline"
-                style={{
-                  borderBottom:
-                    index < threads.length - 1 ? '1px solid rgba(224, 197, 132, 0.1)' : 'none',
-                }}
-              >
-                <div className="node-body">
-                  <div className="node-icon">
-                    {thread.is_pinned ? '📌' : <HiChatAlt2 />}
-                  </div>
-
-                  <div className="node-main">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="node-title">{thread.title}</h2>
-                      {thread.is_pinned && <span className="badge badge-accent">مثبت</span>}
-                    </div>
-
-                    <div className="node-stats-row">
-                      <span>
-                        بواسطة <strong>{thread.author?.username ?? 'مستخدم مجهول'}</strong>
-                      </span>
-                      <span>
-                        {new Date(thread.created_at).toLocaleDateString('ar-EG', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-3 md:flex-row">
-                    <dl className="node-stats-col">
-                      <dd>{thread.views}</dd>
-                      <dt>مشاهدة</dt>
-                    </dl>
-                    <dl className="node-stats-col">
-                      <dd>{thread.replies_count}</dd>
-                      <dt>رد</dt>
-                    </dl>
-                    <div className="meta-pill self-center">
-                      اقرأ الموضوع
-                      <HiArrowLeft className="text-base" />
-                    </div>
+          {threads.map((thread: any, i: number) => (
+            <Link key={thread.id} href={`/t/${thread.slug}`} className="node block no-underline"
+              style={{ borderBottom: i < threads.length - 1 ? "1px solid rgba(224, 197, 132, 0.1)" : "none" }}>
+              <div className="node-body">
+                <div className="node-icon"><BookOpen className="h-5 w-5" /></div>
+                <div className="node-main">
+                  <div className="node-title">{thread.title}</div>
+                  <div className="node-stats-row">
+                    <span>المشاهدات: <strong>{thread.views ?? 0}</strong></span>
+                    <span>الردود: <strong>{thread.replies_count ?? 0}</strong></span>
+                    <span>التصويتات: <strong>{thread.votes_count ?? 0}</strong></span>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-        </section>
+                <div className="meta-pill">
+                  اقرأ <ArrowLeft className="h-4 w-4" />
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
       )}
     </div>
   )

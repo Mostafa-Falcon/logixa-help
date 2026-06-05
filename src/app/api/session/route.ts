@@ -1,50 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server'
-
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextRequest, NextResponse } from "next/server"
+import { collection, addDoc, getDocs, query, where, orderBy, limit, deleteDoc, doc } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
 export async function POST(req: NextRequest) {
-  const supabase = await createServerSupabaseClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const body = await req.json()
+  const { user_id, ip_address, user_agent } = body
 
-  if (!user) {
-    return NextResponse.json({ error: 'غير مسجل' }, { status: 401 })
-  }
+  if (!user_id) return NextResponse.json({ error: "user_id required" }, { status: 400 })
 
-  const body = await req.json().catch(() => ({}))
-  const ipAddress = body?.ip_address ?? null
-  const userAgent = body?.user_agent ?? null
-
-  // Update or insert session
-  const { data: existing } = await supabase
-    .from('user_sessions')
-    .select('id')
-    .eq('user_id', user.id)
-    .order('last_seen_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  if (existing) {
-    await supabase
-      .from('user_sessions')
-      .update({ last_seen_at: new Date().toISOString() })
-      .eq('id', existing.id)
-  } else {
-    await supabase.from('user_sessions').insert({
-      user_id: user.id,
-      last_seen_at: new Date().toISOString(),
-      ip_address: ipAddress,
-      user_agent: userAgent,
-    })
-  }
-
-  // Count online users
   const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
-  const { count: online } = await supabase
-    .from('user_sessions')
-    .select('*', { count: 'exact', head: true })
-    .gte('last_seen_at', fifteenMinAgo)
 
-  return NextResponse.json({ success: true, online: online ?? 0 })
+  const oldSessions = await getDocs(
+    query(collection(db, "user_sessions"), where("user_id", "==", user_id)),
+  )
+  for (const s of oldSessions.docs) {
+    await deleteDoc(doc(db, "user_sessions", s.id))
+  }
+
+  await addDoc(collection(db, "user_sessions"), {
+    user_id,
+    last_seen_at: new Date().toISOString(),
+    ip_address: ip_address || "",
+    user_agent: user_agent || "",
+  })
+
+  const onlineSnap = await getDocs(
+    query(collection(db, "user_sessions"), where("last_seen_at", ">=", fifteenMinAgo)),
+  )
+
+  return NextResponse.json({ online_count: onlineSnap.size })
 }

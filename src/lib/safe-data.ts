@@ -1,64 +1,117 @@
-type SupabaseQuery<T> = {
-  then: (
-    onfulfilled: (value: { data: T | null; error: unknown }) => unknown,
-  ) => unknown
-}
+import {
+  collection,
+  query as fq,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  getDoc,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  setDoc,
+  serverTimestamp,
+  type QueryConstraint,
+} from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
-type SupabaseCount = {
-  then: (
-    onfulfilled: (value: { count: number | null; error: unknown }) => unknown,
-  ) => unknown
-}
+export { serverTimestamp, doc, collection }
 
-type SupabaseRpc = {
-  then: (
-    onfulfilled: (value: { data: unknown; error: unknown }) => unknown,
-  ) => unknown
-}
-
-export async function safeQuery<T>(
-  promise: SupabaseQuery<T>,
-  fallback: T,
-): Promise<T> {
-  try {
-    const result = await (promise as unknown as Promise<{ data: T | null; error: unknown }>)
-    if (result.error) return fallback
-    return result.data ?? fallback
-  } catch {
-    return fallback
-  }
-}
-
-export async function safeCount(
-  promise: SupabaseCount,
-): Promise<number> {
-  try {
-    const result = await (promise as unknown as Promise<{ count: number | null; error: unknown }>)
-    if (result.error) return 0
-    return result.count ?? 0
-  } catch {
-    return 0
-  }
-}
-
-export async function safeSingle<T>(
-  promise: SupabaseQuery<T>,
+export async function safeGet<T>(
+  collectionName: string,
+  docId: string,
 ): Promise<T | null> {
   try {
-    const result = await (promise as unknown as Promise<{ data: T | null; error: unknown }>)
-    if (result.error) return null
-    return result.data
+    const snap = await getDoc(doc(db, collectionName, docId))
+    if (!snap.exists()) return null
+    return { id: snap.id, ...snap.data() } as T
   } catch {
     return null
   }
 }
 
-export async function safeRpc(
-  promise: SupabaseRpc,
-): Promise<void> {
+export async function safeQuery<T>(
+  collectionName: string,
+  constraints: QueryConstraint[],
+): Promise<T[]> {
   try {
-    await (promise as unknown as Promise<unknown>)
+    const q = fq(collection(db, collectionName), ...constraints)
+    const snap = await getDocs(q)
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as T)
   } catch {
-    // silently fail
+    return []
+  }
+}
+
+export async function safeCount(
+  collectionName: string,
+  constraints: QueryConstraint[],
+): Promise<number> {
+  try {
+    const q = fq(collection(db, collectionName), ...constraints)
+    const snap = await getDocs(q)
+    return snap.size
+  } catch {
+    return 0
+  }
+}
+
+export async function safeAdd(
+  collectionName: string,
+  data: Record<string, unknown>,
+): Promise<string | null> {
+  try {
+    const ref = await addDoc(collection(db, collectionName), {
+      ...data,
+      created_at: serverTimestamp(),
+    })
+    return ref.id
+  } catch {
+    return null
+  }
+}
+
+export async function safeUpdate(
+  collectionName: string,
+  docId: string,
+  data: Record<string, unknown>,
+): Promise<boolean> {
+  try {
+    await updateDoc(doc(db, collectionName, docId), {
+      ...data,
+      updated_at: serverTimestamp(),
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function safeDelete(
+  collectionName: string,
+  docId: string,
+): Promise<boolean> {
+  try {
+    await deleteDoc(doc(db, collectionName, docId))
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function safeSet(
+  collectionName: string,
+  docId: string,
+  data: Record<string, unknown>,
+): Promise<boolean> {
+  try {
+    await setDoc(doc(db, collectionName, docId), {
+      ...data,
+      created_at: serverTimestamp(),
+    })
+    return true
+  } catch {
+    return false
   }
 }

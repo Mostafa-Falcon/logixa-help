@@ -1,40 +1,18 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from "next/server"
+import { collection, getDocs, query, where } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
-import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { safeSingle } from '@/lib/safe-data'
-import type { Profile } from '@/lib/types'
-
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ username: string }> },
-) {
+export async function GET(_req: Request, { params }: { params: Promise<{ username: string }> }) {
   const { username } = await params
+  const snap = await getDocs(query(collection(db, "profiles"), where("username", "==", username)))
+  if (snap.empty) return NextResponse.json({ error: "المستخدم غير موجود" }, { status: 404 })
 
-  const supabase = await createServerSupabaseClient()
+  const profile = { id: snap.docs[0].id, ...snap.docs[0].data() }
 
-  const profile = await safeSingle(
-    supabase
-      .from('profiles')
-      .select('*')
-      .eq('username', username)
-      .single<Profile>(),
+  const threadsSnap = await getDocs(
+    query(collection(db, "threads"), where("author_id", "==", snap.docs[0].id), where("status", "==", "published")),
   )
+  const threads = threadsSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
 
-  if (!profile) {
-    return NextResponse.json({ error: 'المستخدم غير موجود' }, { status: 404 })
-  }
-
-  const publicProfile = {
-    username: profile.username,
-    display_name: profile.display_name,
-    avatar_url: profile.avatar_url,
-    bio: profile.bio,
-    role: profile.role,
-    reputation: profile.reputation,
-    threads_count: profile.threads_count,
-    replies_count: profile.replies_count,
-    created_at: profile.created_at,
-  }
-
-  return NextResponse.json({ profile: publicProfile })
+  return NextResponse.json({ profile, threads })
 }

@@ -1,45 +1,51 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server"
+import { collection, addDoc, getDocs, query, where, orderBy, limit } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+export async function GET(req: NextRequest) {
+  const url = new URL(req.url)
+  const cat = url.searchParams.get("category_id")
+  const latest = url.searchParams.get("latest")
+  const page = Number(url.searchParams.get("page") || "1")
+  const pageSize = 20
+
+  let q = query(collection(db, "threads"), orderBy("created_at", "desc"))
+  const snap = await getDocs(q)
+  let threads = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+
+  if (cat) threads = threads.filter((t: any) => t.category_id === cat)
+  if (latest) threads = threads.slice(0, Number(latest))
+
+  const total = threads.length
+  const paged = threads.slice((page - 1) * pageSize, page * pageSize)
+
+  return NextResponse.json({ threads: paged, total, page, pageSize })
+}
 
 export async function POST(req: NextRequest) {
-  const supabase = await createServerSupabaseClient()
   const body = await req.json()
-  const { category_id, title, body: content } = body
+  const { category_id, author_id, title, slug, body: content } = body
 
-  if (!category_id || !title || !content) {
-    return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 })
+  if (!title || !content || !author_id || !category_id) {
+    return NextResponse.json({ error: "جميع الحقول مطلوبة" }, { status: 400 })
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const ref = await addDoc(collection(db, "threads"), {
+    category_id,
+    author_id,
+    title,
+    slug,
+    body: content,
+    status: "published",
+    is_pinned: false,
+    is_locked: false,
+    views: 0,
+    replies_count: 0,
+    votes_count: 0,
+    best_answer_id: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  })
 
-  if (!user) {
-    return NextResponse.json({ error: 'يجب تسجيل الدخول' }, { status: 401 })
-  }
-
-  const slug = `${title
-    .replace(/[^\w\s\u0600-\u06FF]/g, '')
-    .replace(/\s+/g, '-')
-    .toLowerCase()
-    .slice(0, 80)}-${Date.now()}`
-
-  const { data, error } = await supabase
-    .from('threads')
-    .insert({
-      category_id,
-      author_id: user.id,
-      title,
-      slug,
-      body: content,
-    })
-    .select('slug')
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json(data)
+  return NextResponse.json({ id: ref.id, slug })
 }

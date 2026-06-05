@@ -1,147 +1,66 @@
-'use client'
+"use client"
 
-import { ThumbsDown, ThumbsUp } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { useState } from "react"
+import { ThumbsUp, ThumbsDown } from "lucide-react"
+import { collection, getDocs, query, where, addDoc, deleteDoc, doc } from "firebase/firestore"
+import { toast } from "sonner"
 
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-
-type VoteTargetType = 'thread' | 'reply'
+import { db, auth } from "@/lib/firebase"
 
 interface VoteButtonsProps {
-  targetType: VoteTargetType
-  targetId: number
-  initialVotes: number
-  initialUserVote: number | null
+  targetType: "thread" | "reply"
+  targetId: string
+  votesCount: number
 }
 
-function normalizeVote(vote: number | null | undefined): number | null {
-  if (vote === 1 || vote === -1) return vote
-  return null
-}
+export function VoteButtons({ targetType, targetId, votesCount: initial }: VoteButtonsProps) {
+  const [count, setCount] = useState(initial)
+  const [userVote, setUserVote] = useState<number | null>(null)
 
-export default function VoteButtons({
-  targetType,
-  targetId,
-  initialVotes,
-  initialUserVote,
-}: VoteButtonsProps) {
-  const [votes, setVotes] = useState(initialVotes)
-  const [userVote, setUserVote] = useState<number | null>(normalizeVote(initialUserVote))
-  const [loading, setLoading] = useState(false)
+  async function handleVote(value: number) {
+    const user = auth.currentUser
+    if (!user) { toast.error("يجب تسجيل الدخول للتصويت"); return }
 
-  useEffect(() => {
-    async function fetchVote() {
-      try {
-        const res = await fetch(`/api/vote?type=${targetType}&ids=${targetId}`)
-        if (!res.ok) return
-        const data = await res.json()
-        const vote = data.votes?.[0]
-        setUserVote(normalizeVote(vote?.value))
-      } catch {
-        // silently fail
-      }
-    }
+    try {
+      const existing = await getDocs(
+        query(collection(db, "votes"), where("user_id", "==", user.uid), where("target_type", "==", targetType), where("target_id", "==", targetId)),
+      )
 
-    fetchVote()
-  }, [targetType, targetId])
+      if (!existing.empty) {
+        const vote = existing.docs[0]
+        const voteData = vote.data() as { value: number }
 
-  const handleVote = useCallback(
-    async (value: number) => {
-      if (loading) return
-      setLoading(true)
-
-      const prevUserVote = userVote
-      const prevVotes = votes
-
-      let nextUserVote: number | null
-      let nextVotes: number
-
-      if (userVote === value) {
-        nextUserVote = null
-        nextVotes = votes - value
-      } else if (userVote === null) {
-        nextUserVote = value
-        nextVotes = votes + value
-      } else {
-        nextUserVote = value
-        nextVotes = votes - userVote + value
-      }
-
-      setUserVote(nextUserVote)
-      setVotes(nextVotes)
-
-      try {
-        const res = await fetch('/api/vote', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targetType, targetId, value }),
-        })
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          throw new Error(err.error || 'فشل التصويت')
+        if (voteData.value === value) {
+          await deleteDoc(doc(db, "votes", vote.id))
+          setUserVote(null)
+          setCount((c) => c - value)
+          return
         }
-      } catch (err) {
-        setUserVote(prevUserVote)
-        setVotes(prevVotes)
-        toast.error(err instanceof Error ? err.message : 'حدث خطأ أثناء التصويت')
-      } finally {
-        setLoading(false)
+
+        await deleteDoc(doc(db, "votes", vote.id))
+        await addDoc(collection(db, "votes"), { user_id: user.uid, target_type: targetType, target_id: targetId, value, created_at: new Date().toISOString() })
+        setUserVote(value)
+        setCount((c) => c - voteData.value + value)
+        return
       }
-    },
-    [loading, userVote, votes, targetType, targetId],
-  )
+
+      await addDoc(collection(db, "votes"), { user_id: user.uid, target_type: targetType, target_id: targetId, value, created_at: new Date().toISOString() })
+      setUserVote(value)
+      setCount((c) => c + value)
+    } catch {
+      toast.error("حدث خطأ")
+    }
+  }
 
   return (
-    <div className="inline-flex items-center gap-0.5">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        disabled={loading}
-        onClick={() => handleVote(1)}
-        className={cn(
-          'h-7 w-7 rounded-full p-0 transition-colors',
-          userVote === 1
-            ? 'text-[var(--color-accent)]'
-            : 'text-[var(--color-text-dim)] hover:text-[var(--color-accent)]',
-        )}
-        aria-label="تصويت إيجابي"
-      >
-        <ThumbsUp className="h-3.5 w-3.5" />
-      </Button>
-
-      <span
-        className={cn(
-          'min-w-[1.8rem] text-center text-xs font-bold tabular-nums leading-none',
-          votes > 0
-            ? 'text-[var(--color-accent)]'
-            : votes < 0
-              ? 'text-[var(--color-danger)]'
-              : 'text-[var(--color-text-dim)]',
-        )}
-      >
-        {votes}
-      </span>
-
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        disabled={loading}
-        onClick={() => handleVote(-1)}
-        className={cn(
-          'h-7 w-7 rounded-full p-0 transition-colors',
-          userVote === -1
-            ? 'text-[var(--color-danger)]'
-            : 'text-[var(--color-text-dim)] hover:text-[var(--color-danger)]',
-        )}
-        aria-label="تصويت سلبي"
-      >
-        <ThumbsDown className="h-3.5 w-3.5" />
-      </Button>
+    <div className="flex flex-col items-center gap-1">
+      <button onClick={() => handleVote(1)} className={`p-1 rounded transition-colors ${userVote === 1 ? "text-green-400" : "text-text-dim hover:text-green-400"}`}>
+        <ThumbsUp className="h-4 w-4" />
+      </button>
+      <span className="text-sm font-bold tabular-nums text-white">{count}</span>
+      <button onClick={() => handleVote(-1)} className={`p-1 rounded transition-colors ${userVote === -1 ? "text-red-400" : "text-text-dim hover:text-red-400"}`}>
+        <ThumbsDown className="h-4 w-4" />
+      </button>
     </div>
   )
 }

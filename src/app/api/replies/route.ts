@@ -1,55 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server"
+import { collection, addDoc, getDocs, query, where, orderBy } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
-import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { createNotification } from '@/lib/notifications'
+export async function GET(req: NextRequest) {
+  const url = new URL(req.url)
+  const threadId = url.searchParams.get("thread_id")
+  if (!threadId) return NextResponse.json({ error: "thread_id required" }, { status: 400 })
+
+  const snap = await getDocs(
+    query(collection(db, "replies"), where("thread_id", "==", threadId), orderBy("created_at")),
+  )
+  const replies = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  return NextResponse.json(replies)
+}
 
 export async function POST(req: NextRequest) {
-  const supabase = await createServerSupabaseClient()
   const body = await req.json()
-  const { thread_id, body: content } = body
+  const { thread_id, author_id, body: content } = body
 
-  if (!thread_id || !content) {
-    return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 })
+  if (!thread_id || !content || !author_id) {
+    return NextResponse.json({ error: "جميع الحقول مطلوبة" }, { status: 400 })
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const ref = await addDoc(collection(db, "replies"), {
+    thread_id,
+    author_id,
+    body: content,
+    is_best_answer: false,
+    status: "visible",
+    votes_count: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  })
 
-  if (!user) {
-    return NextResponse.json({ error: 'يجب تسجيل الدخول' }, { status: 401 })
-  }
-
-  const { data, error } = await supabase
-    .from('replies')
-    .insert({
-      thread_id,
-      author_id: user.id,
-      body: content,
-    })
-    .select('id')
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  // Notify thread author
-  const { data: thread } = await supabase
-    .from('threads')
-    .select('author_id, title, slug')
-    .eq('id', thread_id)
-    .single()
-
-  if (thread && thread.author_id !== user.id) {
-    await createNotification({
-      userId: thread.author_id,
-      type: 'reply',
-      title: 'رد جديد على موضوعك',
-      body: `وصل رد جديد على موضوع "${thread.title.slice(0, 80)}"`,
-      link: `/t/${thread.slug}`,
-    })
-  }
-
-  return NextResponse.json(data)
+  return NextResponse.json({ id: ref.id })
 }

@@ -1,188 +1,107 @@
-import Link from 'next/link'
-import { redirect } from 'next/navigation'
-import { HiChartBar, HiDocumentText, HiEye, HiShieldCheck } from 'react-icons/hi'
+"use client"
 
-import CategoryForm from '@/app/admin/CategoryForm'
-import { getCurrentUserWithProfile } from '@/lib/auth'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { safeCount, safeQuery } from '@/lib/safe-data'
-import type { Category, Thread } from '@/lib/types'
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { FolderPlus, Plus, RotateCcw } from "lucide-react"
+import { collection, getDocs, query, orderBy, addDoc, doc, deleteDoc } from "firebase/firestore"
+import { toast } from "sonner"
 
-export default async function AdminPage() {
-  const { user, profile } = await getCurrentUserWithProfile()
+import { db } from "@/lib/firebase"
+import { useAuth } from "@/hooks/useAuth"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Card } from "@/components/ui/card"
 
-  if (!user) {
-    redirect('/login?next=/admin')
+function toSlug(value: string) {
+  return value.trim().replace(/[^\w\s\u0600-\u06FF-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase().slice(0, 90)
+}
+
+export default function AdminPage() {
+  const { profile, loading } = useAuth()
+  const router = useRouter()
+  const [categories, setCategories] = useState<any[]>([])
+  const [name, setName] = useState("")
+  const [slug, setSlug] = useState("")
+  const [description, setDescription] = useState("")
+  const [icon, setIcon] = useState("💬")
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (loading) return
+    if (!profile || profile.role !== "admin") { router.push("/"); return }
+    getDocs(query(collection(db, "categories"), orderBy("sort_order"))).then((snap) =>
+      setCategories(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    )
+  }, [profile, loading, router])
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await addDoc(collection(db, "categories"), {
+        name, slug: slug || toSlug(name), description, icon, sort_order: categories.length + 1, threads_count: 0, replies_count: 0, created_at: new Date().toISOString(),
+      })
+      toast.success("تم إنشاء القسم")
+      setName(""); setSlug(""); setDescription(""); setIcon("💬")
+      const snap = await getDocs(query(collection(db, "categories"), orderBy("sort_order")))
+      setCategories(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    } catch { toast.error("فشل إنشاء القسم") }
+    finally { setSaving(false) }
   }
 
-  if (profile?.role !== 'admin') {
-    redirect('/')
+  async function deleteCategory(id: string) {
+    await deleteDoc(doc(db, "categories", id))
+    setCategories((prev) => prev.filter((c) => c.id !== id))
+    toast.success("تم حذف القسم")
   }
 
-  const supabase = await createServerSupabaseClient()
-
-  const totalUsers = await safeCount(
-    supabase.from('profiles').select('*', { count: 'exact', head: true }),
-  )
-
-  const totalThreads = await safeCount(
-    supabase.from('threads').select('*', { count: 'exact', head: true }),
-  )
-
-  const totalReplies = await safeCount(
-    supabase.from('replies').select('*', { count: 'exact', head: true }),
-  )
-
-  const categories = await safeQuery(
-    supabase.from('categories').select('*').order('sort_order').returns<Category[]>(),
-    [],
-  )
-
-  const threads = await safeQuery(
-    supabase.from('threads').select('*').order('created_at', { ascending: false }).limit(20).returns<Thread[]>(),
-    [],
-  )
-
-  const nextSortOrder = Math.max(0, ...(categories.map((category) => category.sort_order) ?? [0])) + 1
+  if (loading) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">جارٍ التحميل...</div></div>
 
   return (
     <div className="content-wrap space-y-5">
-      <section className="surface-card hero-panel px-5 py-6 md:px-7">
-        <span className="eyebrow">منطقة الإدارة</span>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="node-icon">
-                <HiShieldCheck />
-              </div>
-              <div>
-                <h1 className="page-title text-3xl md:text-4xl">لوحة التحكم</h1>
-                <p className="mt-2 page-desc max-w-3xl">
-                  نظرة سريعة على نبض المنتدى: كم عضو عندنا، كم موضوع نُشر، وما الذي يتحرك داخل المحتوى الآن.
-                </p>
-              </div>
+      <div className="mb-4 space-y-2">
+        <h1 className="page-title text-2xl">لوحة الإدارة</h1>
+        <p className="page-desc">إدارة الأقسام — أضف أو احذف الأقسام الأساسية للمنتدى</p>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
+        <Card padding="md">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-extrabold text-white"><FolderPlus className="h-5 w-5" /> إضافة قسم جديد</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div><Label>اسم القسم</Label><Input value={name} onChange={(e) => { setName(e.target.value); if (!slug) setSlug(toSlug(e.target.value)) }} required placeholder="مثال: الشبكات" /></div>
+              <div><Label>الأيقونة</Label><Input value={icon} onChange={(e) => setIcon(e.target.value)} maxLength={4} placeholder="🌐" /></div>
             </div>
-          </div>
-        </div>
-      </section>
+            <div><Label>الرابط المختصر</Label><Input value={slug} onChange={(e) => setSlug(toSlug(e.target.value))} required dir="ltr" className="text-left" placeholder="networks" /></div>
+            <div><Label>وصف القسم</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="وصف يساعد الزائر وجوجل يفهموا القسم" /></div>
+            <Button type="submit" variant="primary" disabled={saving}><Plus className="h-4 w-4" /> {saving ? "إضافة..." : "إضافة قسم"}</Button>
+          </form>
+        </Card>
 
-      <section className="stat-grid">
-        <div className="stat-card">
-          <div className="stat-label">الأعضاء</div>
-          <div className="stat-value">{totalUsers ?? 0}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">الموضوعات</div>
-          <div className="stat-value">{totalThreads ?? 0}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">الردود</div>
-          <div className="stat-value">{totalReplies ?? 0}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">الأقسام</div>
-          <div className="stat-value">{categories.length}</div>
-        </div>
-      </section>
-
-      <section className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="block-container">
-          <div className="block-header">
-            <span>الأقسام الحالية</span>
-            <span className="muted text-sm">{categories.length} قسم</span>
-          </div>
-
+        <Card padding="md">
+          <h2 className="mb-4 text-lg font-extrabold text-white">الأقسام الحالية ({categories.length})</h2>
           {categories.length === 0 ? (
-            <div className="p-6 text-sm muted">لا توجد أقسام بعد.</div>
+            <div className="text-sm muted">لا توجد أقسام بعد</div>
           ) : (
-            <div>
-              {categories.map((category, index) => (
-                <Link
-                  key={category.id}
-                  href={`/c/${category.slug}`}
-                  className="node block no-underline"
-                  style={{
-                    borderBottom:
-                      index < categories.length - 1 ? '1px solid rgba(224, 197, 132, 0.1)' : 'none',
-                  }}
-                >
-                  <div className="node-body">
-                    <div className="node-icon text-xl">{category.icon}</div>
-                    <div className="node-main">
-                      <div className="node-title">{category.name}</div>
-                      <div className="node-desc">{category.description}</div>
-                      <div className="node-stats-row">
-                        <span>
-                          الترتيب: <strong>{category.sort_order}</strong>
-                        </span>
-                        <span>
-                          الرابط: <strong dir="ltr">/{category.slug}</strong>
-                        </span>
-                      </div>
+            <div className="space-y-2">
+              {categories.map((c: any) => (
+                <div key={c.id} className="surface-soft flex items-center justify-between p-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{c.icon}</span>
+                    <div>
+                      <div className="text-sm font-bold text-white">{c.name}</div>
+                      <div className="text-xs muted">{c.slug} · {c.threads_count ?? 0} موضوعات</div>
                     </div>
                   </div>
-                </Link>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => deleteCategory(c.id)}>حذف</Button>
+                </div>
               ))}
             </div>
           )}
-        </div>
-
-        <section className="surface-card p-5 md:p-6">
-          <span className="eyebrow">توسيع المنتدى</span>
-          <h2 className="mt-3 text-2xl font-extrabold text-white">إضافة قسم جديد</h2>
-          <p className="mt-2 mb-5 text-sm muted">
-            أضف قسمًا عندما يظهر طلب متكرر أو فرصة بحث واضحة. الاسم والوصف القويان يساعدان الزائر وجوجل
-            يفهمان القسم من أول نظرة.
-          </p>
-          <CategoryForm nextSortOrder={nextSortOrder} />
-        </section>
-      </section>
-
-      <section className="block-container">
-        <div className="block-header">
-          <span className="inline-flex items-center gap-2">
-            <HiDocumentText />
-            آخر الموضوعات
-          </span>
-          <span className="muted text-sm">آخر 20 موضوعًا</span>
-        </div>
-
-          {threads.length === 0 ? (
-          <div className="p-6 text-sm muted">لا توجد موضوعات بعد.</div>
-        ) : (
-          <div>
-            {threads.map((thread, index) => (
-              <Link
-                key={thread.id}
-                href={`/t/${thread.slug}`}
-                className="node block no-underline"
-                style={{
-                  borderBottom:
-                    index < threads.length - 1 ? '1px solid rgba(224, 197, 132, 0.1)' : 'none',
-                }}
-              >
-                <div className="node-body">
-                  <div className="node-icon">{thread.is_pinned ? '📌' : '📝'}</div>
-                  <div className="node-main">
-                    <div className="node-title">{thread.title}</div>
-                    <div className="node-stats-row">
-                      <span>الردود: <strong>{thread.replies_count}</strong></span>
-                      <span className="inline-flex items-center gap-1">
-                        <HiEye className="text-sm" />
-                        <strong>{thread.views}</strong> مشاهدة
-                      </span>
-                    </div>
-                  </div>
-                  <div className="meta-pill">
-                    <HiChartBar className="text-base" />
-                    متابعة
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+        </Card>
+      </div>
     </div>
   )
 }

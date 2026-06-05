@@ -1,60 +1,80 @@
-'use client'
+"use client"
 
-import Link from 'next/link'
-import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { HiChevronLeft, HiHome, HiLightningBolt, HiPencilAlt } from 'react-icons/hi'
+import Link from "next/link"
+import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { HiChevronLeft, HiHome, HiLightningBolt, HiPencilAlt } from "react-icons/hi"
+import { collection, addDoc, getDocs, query, where } from "firebase/firestore"
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import type { Category } from '@/lib/types'
+import { db, auth } from "@/lib/firebase"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
-export default function NewThreadComposer({
-  categories,
-}: {
-  categories: Category[]
-}) {
+function toSlug(value: string) {
+  return value.trim()
+    .replace(/[^\w\s\u0600-\u06FF-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase()
+    .slice(0, 90)
+}
+
+export default function NewThreadComposer({ categories }: { categories: any[] }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [categoryId, setCategoryId] = useState(searchParams.get('cat') || '')
-  const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
-  const [error, setError] = useState('')
+  const [categoryId, setCategoryId] = useState(searchParams.get("cat") || "")
+  const [title, setTitle] = useState("")
+  const [body, setBody] = useState("")
+  const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    const user = auth.currentUser
+    if (!user) { setError("يجب تسجيل الدخول أولاً"); return }
+
     setSending(true)
-    setError('')
+    setError("")
 
-    const res = await fetch('/api/threads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category_id: Number(categoryId), title, body }),
-    })
-    const data = await res.json()
+    try {
+      const baseSlug = toSlug(title) || "thread"
+      const existing = await getDocs(query(collection(db, "threads"), where("slug", ">=", baseSlug), where("slug", "<", baseSlug + "\uf8ff")))
+      const slug = existing.empty ? baseSlug : `${baseSlug}-${Date.now()}`
 
-    if (data.error) {
-      setError(data.error)
+      const ref = await addDoc(collection(db, "threads"), {
+        category_id: categoryId,
+        author_id: user.uid,
+        authorUsername: user.displayName || user.email?.split("@")[0],
+        title,
+        slug,
+        body,
+        status: "published",
+        is_pinned: false,
+        is_locked: false,
+        views: 0,
+        replies_count: 0,
+        votes_count: 0,
+        best_answer_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+
+      router.push(`/t/${slug}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "حدث خطأ")
+    } finally {
       setSending(false)
-      return
-    }
-
-    if (data.slug) {
-      router.push(`/t/${data.slug}`)
     }
   }
 
   return (
     <div className="content-wrap space-y-5">
       <div className="breadcrumb">
-        <Link href="/" className="inline-flex items-center gap-1">
-          <HiHome className="text-sm" />
-          الرئيسية
-        </Link>
+        <Link href="/" className="inline-flex items-center gap-1"><HiHome className="text-sm" /> الرئيسية</Link>
         <HiChevronLeft className="text-xs" />
         <span>سؤال جديد</span>
       </div>
@@ -63,24 +83,14 @@ export default function NewThreadComposer({
         <section className="surface-card hero-panel px-5 py-6 md:px-7">
           <span className="eyebrow">صياغة سؤال جيد</span>
           <h1 className="mt-4 page-title text-3xl md:text-4xl">اكتب سؤالك كأنك توفر على شخص آخر ساعة كاملة</h1>
-          <p className="mt-4 page-desc">
-            السؤال الجيد ليس فقط ليساعدك الآن، لكنه أيضًا قد يتحول إلى صفحة قوية تظهر في البحث وتجلب ناس
-            كثير لنفس المشكلة. يعني كل سؤال كويس هنا بيشتغل مرتين.
-          </p>
-
+          <p className="mt-4 page-desc">السؤال الجيد ليس فقط ليساعدك الآن، لكنه أيضًا قد يتحول إلى صفحة قوية تظهر في البحث وتجلب ناس كثير لنفس المشكلة.</p>
           <div className="mt-6 grid gap-3">
             <div className="surface-soft p-4 text-sm muted">
-              <div className="mb-2 flex items-center gap-2 font-bold text-white">
-                <HiLightningBolt className="accent-text" />
-                أفضل صيغة
-              </div>
+              <div className="mb-2 flex items-center gap-2 font-bold text-white"><HiLightningBolt className="accent-text" /> أفضل صيغة</div>
               <p>اذكر المشكلة، ما الذي جربته، وأين ظهر العطل. بهذه البساطة يبقى الرد أسرع وأذكى.</p>
             </div>
             <div className="surface-soft p-4 text-sm muted">
-              <div className="mb-2 flex items-center gap-2 font-bold text-white">
-                <HiPencilAlt className="accent-text" />
-                تذكير صغير
-              </div>
+              <div className="mb-2 flex items-center gap-2 font-bold text-white"><HiPencilAlt className="accent-text" /> تذكير صغير</div>
               <p>العنوان القوي يجيب الزيارة، لكن الشرح الواضح هو اللي يجيب الحل ويخلّي الصفحة تعيش.</p>
             </div>
           </div>
@@ -98,14 +108,10 @@ export default function NewThreadComposer({
             <div>
               <Label>القسم</Label>
               <Select value={categoryId} onValueChange={setCategoryId} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر القسم المناسب..." />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="اختر القسم المناسب..." /></SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={String(category.id)}>
-                      {category.name}
-                    </SelectItem>
+                  {categories.map((cat: any) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -113,32 +119,19 @@ export default function NewThreadComposer({
 
             <div>
               <Label>العنوان</Label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                placeholder="مثال: لماذا يتعطل ويندوز 11 بعد آخر تحديث؟"
-              />
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="مثال: لماذا يتعطل ويندوز 11 بعد آخر تحديث؟" />
             </div>
 
             <div>
               <Label>شرح المشكلة</Label>
-              <Textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                required
-                rows={10}
-                placeholder="اشرح المشكلة، الخطوات، الرسائل التي ظهرت، وما الذي جربته حتى الآن..."
-              />
+              <Textarea value={body} onChange={(e) => setBody(e.target.value)} required rows={10} placeholder="اشرح المشكلة، الخطوات، الرسائل التي ظهرت، وما الذي جربته حتى الآن..." />
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Button type="submit" disabled={sending} variant="primary">
-                {sending ? 'جارٍ النشر...' : 'نشر السؤال'}
+                {sending ? "جارٍ النشر..." : "نشر السؤال"}
               </Button>
-              <Button type="button" onClick={() => router.back()} variant="outline">
-                إلغاء
-              </Button>
+              <Button type="button" onClick={() => router.back()} variant="outline">إلغاء</Button>
             </div>
           </form>
         </section>
