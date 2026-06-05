@@ -2,34 +2,60 @@
 
 import Link from "next/link"
 import { Suspense, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { HiLockClosed, HiLogin, HiSparkles } from "react-icons/hi"
-import { signInWithEmailAndPassword } from "firebase/auth"
+import { useRouter } from "next/navigation"
+import { FcGoogle } from "react-icons/fc"
+import { HiLockClosed, HiSparkles } from "react-icons/hi"
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth"
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore"
 
-import { auth } from "@/lib/firebase"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { auth, db } from "@/lib/firebase"
 
 function LoginForm() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleGoogleSignIn() {
     setSending(true)
     setError("")
 
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      router.push(searchParams.get("next") || "/")
+      const provider = new GoogleAuthProvider()
+      const result = await signInWithPopup(auth, provider)
+      const user = result.user
+
+      const profileSnap = await getDoc(doc(db, "profiles", user.uid))
+      if (!profileSnap.exists()) {
+        const baseUsername = (user.displayName || user.email?.split("@")[0] || "user")
+          .replace(/\s+/g, "_")
+          .toLowerCase()
+        let username = baseUsername
+        for (let i = 1; i < 100; i++) {
+          const existing = await getDoc(doc(db, "profiles", username))
+          if (!existing.exists()) break
+          username = `${baseUsername}${i}`
+        }
+        await setDoc(doc(db, "profiles", user.uid), {
+          uid: user.uid,
+          email: user.email || "",
+          displayName: user.displayName || "مستخدم جديد",
+          username,
+          role: "user",
+          avatarUrl: user.photoURL || "",
+          bio: "",
+          website: "",
+          github: "",
+          twitter: "",
+          reputation: 0,
+          threadCount: 0,
+          replyCount: 0,
+          createdAt: Timestamp.now(),
+        })
+      }
+      router.push("/")
       router.refresh()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "بيانات الدخول غير صحيحة"
-      setError(msg)
+      setError(err instanceof Error ? err.message : "فشل تسجيل الدخول")
     } finally {
       setSending(false)
     }
@@ -66,32 +92,20 @@ function LoginForm() {
         <section className="surface-card p-5 md:p-7">
           <div className="mb-5">
             <h2 className="text-2xl font-extrabold text-white">تسجيل الدخول</h2>
-            <p className="mt-2 text-sm muted">اكتب بياناتك وابدأ مباشرة.</p>
+            <p className="mt-2 text-sm muted">سجل بحساب Google وابدأ فوراً.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && <div className="notice notice-error">{error}</div>}
+          {error && <div className="notice notice-error mb-4">{error}</div>}
 
-            <div>
-              <Label>البريد الإلكتروني</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="example@email.com" />
-            </div>
-
-            <div>
-              <Label>كلمة السر</Label>
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="اكتب كلمة السر" />
-            </div>
-
-            <button type="submit" disabled={sending} className="btn btn-primary w-full">
-              <HiLogin className="text-base" />
-              {sending ? "جارٍ تسجيل الدخول..." : "دخول"}
-            </button>
-          </form>
+          <button type="button" disabled={sending} onClick={handleGoogleSignIn} className="btn btn-outline w-full gap-3">
+            <FcGoogle className="text-xl" />
+            {sending ? "جارٍ التحميل..." : "سجل بحساب Google"}
+          </button>
 
           <p className="mt-5 text-sm muted">
-            لا تملك حسابًا؟{" "}
+            فتح حسابك لأول مرة؟ هيتعمل لك حساب تلقائي من Google. كله تمام.{" "}
             <Link href="/register" className="brand-text font-bold hover:opacity-90">
-              أنشئ حسابًا من هنا
+              أنشئ حسابًا
             </Link>
           </p>
         </section>

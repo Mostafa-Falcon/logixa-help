@@ -1,49 +1,61 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useRouter } from "next/navigation"
-import { HiShieldCheck, HiSparkles, HiUserAdd } from "react-icons/hi"
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
-import { doc, setDoc } from "firebase/firestore"
+import { FcGoogle } from "react-icons/fc"
+import { HiShieldCheck, HiSparkles } from "react-icons/hi"
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth"
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore"
 
 import { auth, db } from "@/lib/firebase"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleGoogleSignIn() {
     setSending(true)
     setError("")
 
     try {
-      const cred = await createUserWithEmailAndPassword(auth, email, password)
-      await updateProfile(cred.user, { displayName: username })
-      await setDoc(doc(db, "profiles", cred.user.uid), {
-        username,
-        display_name: username,
-        avatar_url: "",
-        bio: "",
-        role: "member",
-        reputation: 0,
-        threads_count: 0,
-        replies_count: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      const provider = new GoogleAuthProvider()
+      const result = await signInWithPopup(auth, provider)
+      const user = result.user
+
+      const profileSnap = await getDoc(doc(db, "profiles", user.uid))
+      if (!profileSnap.exists()) {
+        const baseUsername = (user.displayName || user.email?.split("@")[0] || "user")
+          .replace(/\s+/g, "_")
+          .toLowerCase()
+        let username = baseUsername
+        for (let i = 1; i < 100; i++) {
+          const existing = await getDoc(doc(db, "profiles", username))
+          if (!existing.exists()) break
+          username = `${baseUsername}${i}`
+        }
+        await setDoc(doc(db, "profiles", user.uid), {
+          uid: user.uid,
+          email: user.email || "",
+          displayName: user.displayName || "مستخدم جديد",
+          username,
+          role: "user",
+          avatarUrl: user.photoURL || "",
+          bio: "",
+          website: "",
+          github: "",
+          twitter: "",
+          reputation: 0,
+          threadCount: 0,
+          replyCount: 0,
+          createdAt: Timestamp.now(),
+        })
+      }
       router.push("/")
       router.refresh()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "فشل إنشاء الحساب"
-      setError(msg)
+      setError(err instanceof Error ? err.message : "فشل إنشاء الحساب")
     } finally {
       setSending(false)
     }
@@ -80,32 +92,15 @@ export default function RegisterPage() {
         <section className="surface-card p-5 md:p-7">
           <div className="mb-5">
             <h2 className="text-2xl font-extrabold text-white">إنشاء حساب جديد</h2>
-            <p className="mt-2 text-sm muted">املأ البيانات الأساسية فقط، والباقي نكمّله بعدين.</p>
+            <p className="mt-2 text-sm muted">سجل بحساب Google، الحساب هيتعمل لك تلقائي.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && <div className="notice notice-error">{error}</div>}
+          {error && <div className="notice notice-error mb-4">{error}</div>}
 
-            <div>
-              <Label>اسم المستخدم</Label>
-              <Input value={username} onChange={(e) => setUsername(e.target.value)} required placeholder="مثال: mostafa_dev" />
-            </div>
-
-            <div>
-              <Label>البريد الإلكتروني</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="example@email.com" />
-            </div>
-
-            <div>
-              <Label>كلمة السر</Label>
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="اختر كلمة سر قوية" />
-            </div>
-
-            <button type="submit" disabled={sending} className="btn btn-primary w-full">
-              <HiUserAdd className="text-base" />
-              {sending ? "جارٍ إنشاء الحساب..." : "إنشاء الحساب"}
-            </button>
-          </form>
+          <button type="button" disabled={sending} onClick={handleGoogleSignIn} className="btn btn-outline w-full gap-3">
+            <FcGoogle className="text-xl" />
+            {sending ? "جارٍ التحميل..." : "سجل بحساب Google"}
+          </button>
 
           <p className="mt-5 text-sm muted">
             لديك حساب بالفعل؟{" "}
@@ -116,5 +111,13 @@ export default function RegisterPage() {
         </section>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="content-wrap"><div className="surface-card p-8 text-center text-sm muted">جارٍ تحميل...</div></div>}>
+      <RegisterForm />
+    </Suspense>
   )
 }
