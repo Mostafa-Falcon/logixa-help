@@ -6,6 +6,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { HiChevronLeft, HiHome, HiLightningBolt, HiPencilAlt } from 'react-icons/hi'
 
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import type { Category } from '@/lib/types'
 
 export default function NewThreadComposer({
@@ -92,42 +96,38 @@ export default function NewThreadComposer({
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="form-label">القسم</label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                required
-                className="form-input"
-              >
-                <option value="">اختر القسم المناسب...</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+              <Label>القسم</Label>
+              <Select value={categoryId} onValueChange={setCategoryId} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر القسم المناسب..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={String(category.id)}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <label className="form-label">العنوان</label>
-              <input
-                type="text"
+              <Label>العنوان</Label>
+              <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                className="form-input"
                 placeholder="مثال: لماذا يتعطل ويندوز 11 بعد آخر تحديث؟"
               />
             </div>
 
             <div>
-              <label className="form-label">شرح المشكلة</label>
-              <textarea
+              <Label>شرح المشكلة</Label>
+              <Textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 required
                 rows={10}
-                className="form-input resize-y"
                 placeholder="اشرح المشكلة، الخطوات، الرسائل التي ظهرت، وما الذي جربته حتى الآن..."
               />
             </div>

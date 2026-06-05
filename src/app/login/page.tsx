@@ -5,6 +5,9 @@ import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { HiLockClosed, HiLogin, HiSparkles } from 'react-icons/hi'
 
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -74,25 +77,23 @@ function LoginForm() {
             {error && <div className="notice notice-error">{error}</div>}
 
             <div>
-              <label className="form-label">البريد الإلكتروني</label>
-              <input
+              <Label>البريد الإلكتروني</Label>
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="form-input"
                 placeholder="example@email.com"
               />
             </div>
 
             <div>
-              <label className="form-label">كلمة السر</label>
-              <input
+              <Label>كلمة السر</Label>
+              <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="form-input"
                 placeholder="اكتب كلمة السر"
               />
             </div>

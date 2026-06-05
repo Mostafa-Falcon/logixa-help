@@ -5,6 +5,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { HiShieldCheck, HiSparkles, HiUserAdd } from 'react-icons/hi'
 
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
 export default function RegisterPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -84,37 +87,33 @@ export default function RegisterPage() {
             {notice && <div className="notice notice-success">{notice}</div>}
 
             <div>
-              <label className="form-label">اسم المستخدم</label>
-              <input
-                type="text"
+              <Label>اسم المستخدم</Label>
+              <Input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                className="form-input"
                 placeholder="مثال: mostafa_dev"
               />
             </div>
 
             <div>
-              <label className="form-label">البريد الإلكتروني</label>
-              <input
+              <Label>البريد الإلكتروني</Label>
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="form-input"
                 placeholder="example@email.com"
               />
             </div>
 
             <div>
-              <label className="form-label">كلمة السر</label>
-              <input
+              <Label>كلمة السر</Label>
+              <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="form-input"
                 placeholder="اختر كلمة سر قوية"
               />
             </div>

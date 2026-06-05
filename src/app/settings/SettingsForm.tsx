@@ -5,6 +5,9 @@ import { FileText, Save, User } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 
 export default function SettingsForm() {
   const [displayName, setDisplayName] = useState('')
@@ -66,16 +69,14 @@ export default function SettingsForm() {
     <section className="surface-card p-5 md:p-7">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="display_name" className="form-label">
+          <Label htmlFor="display_name">
             <User className="ml-1 inline-block h-4 w-4" />
             الاسم المعروض
-          </label>
-          <input
+          </Label>
+          <Input
             id="display_name"
-            type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="form-input mt-1"
             placeholder="الاسم الذي يظهر للجميع"
             maxLength={60}
           />
@@ -83,15 +84,15 @@ export default function SettingsForm() {
         </div>
 
         <div>
-          <label htmlFor="bio" className="form-label">
+          <Label htmlFor="bio">
             <FileText className="ml-1 inline-block h-4 w-4" />
             نبذة عنك
-          </label>
-          <textarea
+          </Label>
+          <Textarea
             id="bio"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            className="form-input mt-1 min-h-[120px]"
+            className="min-h-[120px]"
             placeholder="اكتب نبذة مختصرة عن نفسك، تخصصك، أو مجالك..."
             maxLength={500}
           />

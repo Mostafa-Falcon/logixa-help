@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 
 interface ReportButtonProps {
   targetType: 'thread' | 'reply'
@@ -66,18 +68,16 @@ export default function ReportButton({ targetType, targetId }: ReportButtonProps
             background: 'rgba(18, 18, 22, 0.97)',
           }}
         >
-          <label className="mb-2 block text-xs font-bold text-white" htmlFor="report-reason">
+          <Label htmlFor="report-reason" className="mb-2 block text-xs">
             سبب الإبلاغ
-          </label>
-          <textarea
+          </Label>
+          <Textarea
             id="report-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
-            className="mb-3 w-full resize-none rounded-lg border bg-transparent p-2.5 text-sm text-white placeholder:text-[var(--color-text-dim)] focus:outline-none"
-            style={{ borderColor: 'rgba(224, 197, 132, 0.15)' }}
+            className="mb-3 resize-none"
             placeholder="اكتب سبب الإبلاغ..."
-            dir="rtl"
           />
           <div className="flex items-center gap-2">
             <Button type="submit" variant="primary" size="sm" disabled={submitting || !reason.trim()}>

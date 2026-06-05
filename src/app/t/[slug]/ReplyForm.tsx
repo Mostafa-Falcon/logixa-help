@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Send } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function ReplyForm({ threadId }: { threadId: number }) {
   const router = useRouter()
@@ -52,12 +53,12 @@ export default function ReplyForm({ threadId }: { threadId: number }) {
         </div>
       )}
 
-      <textarea
+      <Textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         required
         rows={5}
-        className="form-input resize-y text-sm"
+        className="text-sm"
         placeholder="اكتب ردك بشكل واضح: ما الحل؟ لماذا نجح؟ وهل في ملاحظة مهمة لازم صاحب السؤال يعرفها؟"
       />
 

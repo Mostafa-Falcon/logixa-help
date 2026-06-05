@@ -6,6 +6,9 @@ import { FolderPlus, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 
 function toSlug(value: string) {
   return value
@@ -70,8 +73,8 @@ export default function CategoryForm({ nextSortOrder }: { nextSortOrder: number 
     <form onSubmit={handleSubmit} className="grid gap-4">
       <div className="grid gap-4 md:grid-cols-[1fr_0.75fr]">
         <div>
-          <label className="form-label">اسم القسم</label>
-          <input
+          <Label>اسم القسم</Label>
+          <Input
             value={name}
             onChange={(e) => {
               const value = e.target.value
@@ -81,17 +84,15 @@ export default function CategoryForm({ nextSortOrder }: { nextSortOrder: number 
               }
             }}
             required
-            className="form-input"
             placeholder="مثال: التعليم والدراسة"
           />
         </div>
 
         <div>
-          <label className="form-label">الأيقونة</label>
-          <input
+          <Label>الأيقونة</Label>
+          <Input
             value={icon}
             onChange={(e) => setIcon(e.target.value)}
-            className="form-input"
             maxLength={4}
             placeholder="🎓"
           />
@@ -100,37 +101,35 @@ export default function CategoryForm({ nextSortOrder }: { nextSortOrder: number 
 
       <div className="grid gap-4 md:grid-cols-[1fr_0.42fr]">
         <div>
-          <label className="form-label">الرابط المختصر</label>
-          <input
+          <Label>الرابط المختصر</Label>
+          <Input
             value={slug}
             onChange={(e) => setSlug(toSlug(e.target.value))}
             required
             dir="ltr"
-            className="form-input text-left"
+            className="text-left"
             placeholder="education"
           />
         </div>
 
         <div>
-          <label className="form-label">الترتيب</label>
-          <input
+          <Label>الترتيب</Label>
+          <Input
             type="number"
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
-            className="form-input"
             min={1}
           />
         </div>
       </div>
 
       <div>
-        <label className="form-label">وصف القسم</label>
-        <textarea
+        <Label>وصف القسم</Label>
+        <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
           rows={3}
-          className="form-input resize-y"
           placeholder="اكتب وصفًا واضحًا يساعد الزائر وجوجل يفهموا القسم بسرعة."
         />
       </div>
