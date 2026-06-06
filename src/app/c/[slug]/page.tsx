@@ -2,21 +2,57 @@
 
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { ArrowLeft, BookOpen, MessageSquare, Plus, Pin, Sparkles } from "lucide-react"
-import { collection, getDocs, query, where, orderBy, doc, getDoc } from "firebase/firestore"
+import { collection, getDocs, query, where, orderBy, limit, doc, getDoc, startAfter, getCountFromServer, type DocumentSnapshot } from "firebase/firestore"
 
 import { db } from "@/lib/firebase"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { PageHeader } from "@/components/ui/page-header"
+import Pagination from "@/components/Pagination"
+
+const PAGE_SIZE = 15
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>()
   const [category, setCategory] = useState<any>(null)
   const [threads, setThreads] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [cursors, setCursors] = useState<(DocumentSnapshot | null)[]>([null])
+
+  const loadPage = useCallback(async (pageNum: number, cursor: DocumentSnapshot | null) => {
+    if (!category) return
+    setLoading(true)
+
+    try {
+      let q = query(
+        collection(db, "threads"),
+        where("categoryId", "==", category.id),
+        orderBy("isPinned", "desc"),
+        orderBy("createdAt", "desc"),
+        limit(PAGE_SIZE),
+      )
+      if (cursor) q = query(q, startAfter(cursor))
+
+      const tSnap = await getDocs(q)
+      const items = tSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+
+      setThreads(items)
+      setPage(pageNum)
+
+      if (tSnap.docs.length > 0) {
+        const newCursors = [...cursors]
+        newCursors[pageNum] = tSnap.docs[tSnap.docs.length - 1]
+        setCursors(newCursors)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [category, cursors])
 
   useEffect(() => {
     async function load() {
@@ -26,20 +62,24 @@ export default function CategoryPage() {
       const cat = { id: catSnap.id, ...catSnap.data() }
       setCategory(cat)
 
-      const tSnap = await getDocs(
+      const countSnap = await getCountFromServer(
         query(collection(db, "threads"), where("categoryId", "==", cat.id)),
       )
-      const all = tSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      const pinned = all.filter((t: any) => t.isPinned)
-      const rest = all.filter((t: any) => !t.isPinned)
-      rest.sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""))
-      setThreads([...pinned, ...rest])
-      setLoading(false)
+      setTotalPages(Math.max(1, Math.ceil(countSnap.data().count / PAGE_SIZE)))
+
+      await loadPage(1, null)
     }
     load()
   }, [slug])
 
-  if (loading) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">جارٍ التحميل...</div></div>
+  async function goToPage(p: number) {
+    if (p < 1 || p > totalPages) return
+    if (cursors[p - 1] !== undefined) {
+      await loadPage(p, cursors[p - 1])
+    }
+  }
+
+  if (loading && !threads.length && !category) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">جارٍ التحميل...</div></div>
   if (!category) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">القسم غير موجود</div></div>
 
   return (
@@ -79,7 +119,7 @@ export default function CategoryPage() {
         <div className="block-container">
           <div className="block-header">
             <span><Sparkles className="ml-1 inline h-4 w-4" />الموضوعات</span>
-            <span className="muted text-sm">{threads.length} موضوع</span>
+            <span className="muted text-sm">{category.threadCount ?? 0} موضوع</span>
           </div>
           {threads.map((thread: any, i: number) => (
             <Link key={thread.id} href={`/t/${thread.slug}`} className="node block no-underline"
@@ -104,6 +144,7 @@ export default function CategoryPage() {
               </div>
             </Link>
           ))}
+          <Pagination currentPage={page} totalPages={totalPages} baseUrl={`/c/${slug}`} onPageChange={goToPage} />
         </div>
       )}
     </div>

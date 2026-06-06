@@ -40,20 +40,30 @@ export default function Pagination({
   currentPage,
   totalPages,
   baseUrl,
+  onPageChange,
 }: {
   currentPage: number
   totalPages: number
   baseUrl: string
+  onPageChange?: (page: number) => void
 }) {
   if (totalPages <= 1) return null
 
   const pages = getPageNumbers(currentPage, totalPages)
+
+  function handleClick(page: number, e: React.MouseEvent) {
+    if (onPageChange) {
+      e.preventDefault()
+      onPageChange(page)
+    }
+  }
 
   return (
     <nav className="flex items-center justify-center gap-2 p-4" aria-label="التنقل بين الصفحات">
       {currentPage > 1 ? (
         <Link
           href={buildUrl(baseUrl, currentPage - 1)}
+          onClick={(e) => handleClick(currentPage - 1, e)}
           className="btn btn-outline inline-flex items-center gap-1 px-3 py-2 text-sm no-underline"
         >
           <ChevronRight className="h-4 w-4" />
@@ -75,6 +85,7 @@ export default function Pagination({
           <Link
             key={page}
             href={buildUrl(baseUrl, page)}
+            onClick={(e) => handleClick(page, e)}
             className={cn(
               'meta-pill inline-flex items-center justify-center px-3 py-1.5 text-sm no-underline',
               page === currentPage && 'bg-white/10 text-white font-bold',
@@ -88,6 +99,7 @@ export default function Pagination({
       {currentPage < totalPages ? (
         <Link
           href={buildUrl(baseUrl, currentPage + 1)}
+          onClick={(e) => handleClick(currentPage + 1, e)}
           className="btn btn-outline inline-flex items-center gap-1 px-3 py-2 text-sm no-underline"
         >
           التالي

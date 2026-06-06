@@ -4,10 +4,9 @@ import Link from "next/link"
 import { Suspense, useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { ArrowLeft, BookOpen, Search as SearchIcon } from "lucide-react"
-import { collection, getDocs } from "firebase/firestore"
+import { collection, getDocs, query as fq, where, orderBy, limit as fLimit } from "firebase/firestore"
 
 import { db } from "@/lib/firebase"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -19,18 +18,46 @@ function SearchContent() {
   const [query, setQuery] = useState(q)
   const [results, setResults] = useState<any[]>([])
   const [searched, setSearched] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!q.trim()) return
     async function load() {
-      const all = await getDocs(collection(db, "threads"))
-      const threads = all.docs.map((d) => ({ id: d.id, ...d.data() }))
-      const filtered = threads.filter((t: any) =>
-        t.title?.toLowerCase().includes(q.toLowerCase()) ||
-        t.content?.toLowerCase().includes(q.toLowerCase()),
-      )
-      setResults(filtered)
+      setLoading(true)
+      const term = q.trim().toLowerCase()
+
+      try {
+        const titlePrefix = fq(
+          collection(db, "threads"),
+          where("title", ">=", term),
+          where("title", "<=", term + "\uf8ff"),
+          orderBy("title"),
+          fLimit(50),
+        )
+        const titleSnap = await getDocs(titlePrefix)
+        const byTitle = new Map(titleSnap.docs.map((d) => [d.id, { id: d.id, ...d.data() }]))
+
+        const tagPrefix = fq(
+          collection(db, "threads"),
+          where("tags", "array-contains", term),
+          fLimit(50),
+        )
+        const tagSnap = await getDocs(tagPrefix)
+        for (const d of tagSnap.docs) {
+          if (!byTitle.has(d.id)) byTitle.set(d.id, { id: d.id, ...d.data() })
+        }
+
+        setResults(Array.from(byTitle.values()))
+      } catch {
+        const all = await getDocs(collection(db, "threads"))
+        const threads = all.docs.map((d) => ({ id: d.id, ...d.data() }))
+        setResults(threads.filter((t: any) =>
+          t.title?.toLowerCase().includes(term) ||
+          t.content?.toLowerCase().includes(term),
+        ))
+      }
       setSearched(true)
+      setLoading(false)
     }
     load()
   }, [q])
@@ -61,7 +88,9 @@ function SearchContent() {
       {searched && (
         <section>
           <h3 className="mb-3 text-lg font-extrabold text-white">نتائج البحث عن "{q}"</h3>
-          {results.length === 0 ? (
+          {loading ? (
+            <Card padding="md" className="text-center muted">جارٍ البحث...</Card>
+          ) : results.length === 0 ? (
             <Card padding="md" className="text-center muted">لا توجد نتائج. جرب كلمات مختلفة.</Card>
           ) : (
             <div className="space-y-2">
