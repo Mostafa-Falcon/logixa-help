@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { FolderPlus, Globe, Plus, RotateCcw } from "lucide-react"
+import { FolderPlus, Plus } from "lucide-react"
 import { collection, getDocs, query, orderBy, setDoc, doc, deleteDoc } from "firebase/firestore"
 import { toast } from "sonner"
 
@@ -31,7 +31,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (loading) return
-    if (!profile || (profile.role !== "owner" && profile.role !== "moderator")) { router.push("/"); return }
+    if (!profile || (profile.role !== "owner" && profile.role !== "admin" && profile.role !== "moderator")) { toast.error("مفيش صلاحية"); router.push("/"); return }
     getDocs(query(collection(db, "categories"), orderBy("order"))).then((snap) =>
       setCategories(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
     )
@@ -54,9 +54,11 @@ export default function AdminPage() {
   }
 
   async function deleteCategory(id: string) {
-    await deleteDoc(doc(db, "categories", id))
-    setCategories((prev) => prev.filter((c) => c.id !== id))
-    toast.success("تم حذف القسم")
+    try {
+      await deleteDoc(doc(db, "categories", id))
+      setCategories((prev) => prev.filter((c) => c.id !== id))
+      toast.success("تم حذف القسم")
+    } catch { toast.error("فشل حذف القسم") }
   }
 
   if (loading) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">جارٍ التحميل...</div></div>

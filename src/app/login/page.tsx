@@ -6,40 +6,9 @@ import { useRouter } from "next/navigation"
 import { FcGoogle } from "react-icons/fc"
 import { HiLockClosed, HiSparkles } from "react-icons/hi"
 import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "firebase/auth"
-import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore"
 
-import { auth, db } from "@/lib/firebase"
-
-async function createProfileIfNeeded(user: { uid: string; email: string | null; displayName: string | null; photoURL: string | null }) {
-  const profileSnap = await getDoc(doc(db, "profiles", user.uid))
-  if (!profileSnap.exists()) {
-    const baseUsername = (user.displayName || user.email?.split("@")[0] || "user")
-      .replace(/\s+/g, "_")
-      .toLowerCase()
-    let username = baseUsername
-    for (let i = 1; i < 100; i++) {
-      const existing = await getDoc(doc(db, "profiles", username))
-      if (!existing.exists()) break
-      username = `${baseUsername}${i}`
-    }
-    await setDoc(doc(db, "profiles", user.uid), {
-      uid: user.uid,
-      email: user.email || "",
-      displayName: user.displayName || "مستخدم جديد",
-      username,
-      role: "user",
-      avatarUrl: user.photoURL || "",
-      bio: "",
-      website: "",
-      github: "",
-      twitter: "",
-      reputation: 0,
-      threadCount: 0,
-      replyCount: 0,
-      createdAt: Timestamp.now(),
-    })
-  }
-}
+import { auth } from "@/lib/firebase"
+import { createProfileIfNeeded } from "@/lib/auth-utils"
 
 function LoginForm() {
   const router = useRouter()
@@ -52,7 +21,6 @@ function LoginForm() {
         if (result?.user) {
           await createProfileIfNeeded(result.user)
           router.push("/")
-          router.refresh()
         }
       })
       .catch((err) => {

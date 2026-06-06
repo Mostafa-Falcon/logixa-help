@@ -1,82 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Categories: anyone can read, only auth'd users can write
-    match /categories/{slug} {
+    match /{document=**} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role in ['admin', 'owner'];
-    }
-
-    // Threads: anyone can read, only auth'd can create/update
-    match /threads/{threadId} {
-      allow read: if true;
-      allow create: if request.auth != null
-        && request.resource.data.authorUid == request.auth.uid;
-      allow update: if request.auth != null
-        && (request.resource.data.authorUid == request.auth.uid
-            || get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role in ['moderator', 'admin', 'owner']);
-      allow delete: if request.auth != null
-        && (get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role in ['moderator', 'admin', 'owner']);
-    }
-
-    // Replies: anyone can read, only auth'd can create/update
-    match /replies/{replyId} {
-      allow read: if true;
-      allow create: if request.auth != null
-        && request.resource.data.authorUid == request.auth.uid;
-      allow update: if request.auth != null
-        && (request.resource.data.authorUid == request.auth.uid
-            || get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role in ['moderator', 'admin', 'owner']);
-      allow delete: if request.auth != null
-        && (get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role in ['moderator', 'admin', 'owner']);
-    }
-
-    // Profiles: anyone can read, owner can write
-    match /profiles/{uid} {
-      allow read: if true;
-      allow create: if request.auth != null && request.auth.uid == uid;
-      allow update: if request.auth != null && request.auth.uid == uid;
-      allow delete: if request.auth != null && request.auth.uid == uid;
-    }
-
-    // Votes: anyone can read, only auth'd can write
-    match /votes/{voteId} {
-      allow read: if true;
-      allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
-      allow delete: if request.auth != null
-        && resource.data.userId == request.auth.uid;
-    }
-
-    // Reports: only auth'd can read/write
-    match /reports/{reportId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null
-        && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role in ['moderator', 'admin', 'owner'];
-      allow delete: if request.auth != null
-        && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role in ['moderator', 'admin', 'owner'];
-    }
-
-    // Notifications: owner only
-    match /notifications/{notificationId} {
-      allow read: if request.auth != null
-        && resource.data.recipientUid == request.auth.uid;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null
-        && resource.data.recipientUid == request.auth.uid;
-      allow delete: if request.auth != null
-        && resource.data.recipientUid == request.auth.uid;
-    }
-
-    // Sessions: for online counter
-    match /user_sessions/{sessionId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow delete: if request.auth != null;
+      allow write: if request.auth != null;
     }
   }
 }

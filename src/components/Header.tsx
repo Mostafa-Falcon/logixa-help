@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import {
   CirclePlus, Home, Layers, LogIn, LogOut, Menu, Search, ShieldCheck, Trophy, UserPlus, X,
@@ -28,12 +28,11 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
-  if (typeof window !== "undefined") {
+  useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
-    if (typeof window !== "undefined") {
-      window.addEventListener("scroll", onScroll)
-    }
-  }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   async function handleLogout() {
     await signOut(auth)

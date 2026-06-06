@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { ArrowLeft, CheckCircle, Edit3, Eye, Home, Lock, MessageSquare, Pin, ThumbsUp, Clock, Trash2, Save, X, AlertTriangle } from "lucide-react"
-import { collection, getDocs, query, where, orderBy, doc, getDoc, updateDoc, deleteDoc, getCountFromServer, limit, startAfter, type DocumentSnapshot } from "firebase/firestore"
+import { collection, getDocs, query, where, orderBy, doc, getDoc, updateDoc, deleteDoc, writeBatch, increment, getCountFromServer, limit, startAfter, type DocumentSnapshot } from "firebase/firestore"
 
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/hooks/useAuth"
@@ -51,7 +51,7 @@ export default function ThreadPage() {
       setThread(t)
       setEditContent(t.content)
 
-      await updateDoc(doc(db, "threads", tId), { viewCount: ((data as any).viewCount ?? 0) + 1 })
+      await updateDoc(doc(db, "threads", tId), { viewCount: increment(1) })
 
       const countSnap = await getCountFromServer(
         query(collection(db, "replies"), where("threadId", "==", t.id)),
@@ -107,64 +107,80 @@ export default function ThreadPage() {
 
   async function markBest(replyId: string) {
     if (!thread || !profile || profile.uid !== thread.authorUid) return
-    const batch = [...replies]
-    for (const r of batch) {
-      await updateDoc(doc(db, "replies", r.id), { isBestAnswer: r.id === replyId })
-    }
-    if (bestReply) {
-      await updateDoc(doc(db, "replies", bestReply.id), { isBestAnswer: bestReply.id === replyId })
-    }
-    await updateDoc(doc(db, "threads", thread.id), { isBestAnswer: replyId })
-    setThread({ ...thread, isBestAnswer: replyId })
-    setBestReply((prev: any) => prev && prev.id === replyId ? { ...prev, isBestAnswer: true } : prev)
-    setReplies(batch.map((r) => ({ ...r, isBestAnswer: r.id === replyId })))
+    try {
+      const batch = writeBatch(db)
+      const all = [...(bestReply ? [bestReply] : []), ...replies]
+      for (const r of all) {
+        batch.update(doc(db, "replies", r.id), { isBestAnswer: r.id === replyId })
+      }
+      batch.update(doc(db, "threads", thread.id), { isBestAnswer: replyId })
+      await batch.commit()
+
+      setThread({ ...thread, isBestAnswer: replyId })
+      setBestReply((prev: any) => prev && prev.id === replyId ? { ...prev, isBestAnswer: true } : prev)
+      setReplies(replies.map((r) => ({ ...r, isBestAnswer: r.id === replyId })))
+    } catch { /* silent */ }
   }
 
   async function saveThreadEdit() {
     if (!thread || !editContent.trim()) return
-    await updateDoc(doc(db, "threads", thread.id), { content: editContent.trim(), updatedAt: new Date().toISOString() })
-    setThread({ ...thread, content: editContent.trim() })
-    setEditingThread(false)
+    try {
+      await updateDoc(doc(db, "threads", thread.id), { content: editContent.trim(), updatedAt: new Date().toISOString() })
+      setThread({ ...thread, content: editContent.trim() })
+      setEditingThread(false)
+    } catch { /* silent */ }
   }
 
   async function saveReplyEdit(replyId: string) {
     if (!editReplyContent.trim()) return
-    await updateDoc(doc(db, "replies", replyId), { content: editReplyContent.trim(), updatedAt: new Date().toISOString() })
-    if (bestReply?.id === replyId) setBestReply({ ...bestReply, content: editReplyContent.trim() })
-    else setReplies(replies.map((r) => r.id === replyId ? { ...r, content: editReplyContent.trim() } : r))
-    setEditingReplyId(null)
+    try {
+      await updateDoc(doc(db, "replies", replyId), { content: editReplyContent.trim(), updatedAt: new Date().toISOString() })
+      if (bestReply?.id === replyId) setBestReply({ ...bestReply, content: editReplyContent.trim() })
+      else setReplies(replies.map((r) => r.id === replyId ? { ...r, content: editReplyContent.trim() } : r))
+      setEditingReplyId(null)
+    } catch { /* silent */ }
   }
 
   async function deleteThread() {
     if (!thread || !canModerate) return
-    await deleteDoc(doc(db, "threads", thread.id))
-    window.location.href = `/c/${thread.categoryId}`
+    try {
+      await deleteDoc(doc(db, "threads", thread.id))
+      window.location.href = `/c/${thread.categoryId}`
+    } catch { /* silent */ }
   }
 
   async function deleteReply(replyId: string) {
     if (!canModerate) return
-    await deleteDoc(doc(db, "replies", replyId))
-    setReplies(replies.filter((r) => r.id !== replyId))
-    if (bestReply?.id === replyId) setBestReply(null)
-    setDeleteConfirm(null)
+    try {
+      await deleteDoc(doc(db, "replies", replyId))
+      setReplies(replies.filter((r) => r.id !== replyId))
+      if (bestReply?.id === replyId) setBestReply(null)
+      setDeleteConfirm(null)
+    } catch { /* silent */ }
   }
 
   async function togglePin() {
     if (!thread || !isMod) return
-    const newVal = !thread.isPinned
-    await updateDoc(doc(db, "threads", thread.id), { isPinned: newVal })
-    setThread({ ...thread, isPinned: newVal })
+    try {
+      const newVal = !thread.isPinned
+      await updateDoc(doc(db, "threads", thread.id), { isPinned: newVal })
+      setThread({ ...thread, isPinned: newVal })
+    } catch { /* silent */ }
   }
 
   async function toggleLock() {
     if (!thread || !isMod) return
-    const newVal = !thread.isLocked
-    await updateDoc(doc(db, "threads", thread.id), { isLocked: newVal })
-    setThread({ ...thread, isLocked: newVal })
+    try {
+      const newVal = !thread.isLocked
+      await updateDoc(doc(db, "threads", thread.id), { isLocked: newVal })
+      setThread({ ...thread, isLocked: newVal })
+    } catch { /* silent */ }
   }
 
   function formatDate(d: string) {
-    return new Date(d).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    if (!d) return ""
+    try { return new Date(d).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) }
+    catch { return "" }
   }
 
   function renderReply(reply: any) {
@@ -256,7 +272,7 @@ export default function ThreadPage() {
         </div>
         <div className="meta-row mt-3">
           {thread.isPinned && <Badge variant="brand">مثبت</Badge>}
-          {thread.isLocked &&               <Badge variant="accent"><Lock className="ml-1 inline h-3 w-3" />مقفول</Badge>}
+          {thread.isLocked &&               <Badge variant="accent"><Lock className="ml-1 inline h-3 w-3" /> مقفول</Badge>}
           <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {thread.viewCount ?? 0} مشاهدة</span>
           <span className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {thread.replyCount ?? 0} رد</span>
           <span className="flex items-center gap-1"><ThumbsUp className="h-3.5 w-3.5" /> {thread.score ?? 0} صوت</span>

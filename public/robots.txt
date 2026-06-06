@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://logixa-help.vercel.app/sitemap.xml

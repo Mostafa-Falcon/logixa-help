@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { PageHeader } from "@/components/ui/page-header"
 import { StatCard } from "@/components/ui/stat-card"
+import MonetagAd from "@/components/Monetag"
 import type { Category } from "@/lib/types"
 
 /** أيقونات المجالات المختلفة */
@@ -418,6 +419,8 @@ export default function HomePage() {
           </Button>
         </div>
       </section>
+
+      <MonetagAd />
     </div>
   )
 }

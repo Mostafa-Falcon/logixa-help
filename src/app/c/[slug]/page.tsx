@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { ArrowLeft, BookOpen, MessageSquare, Plus, Pin, Sparkles } from "lucide-react"
 import { collection, getDocs, query, where, orderBy, limit, doc, getDoc, startAfter, getCountFromServer, type DocumentSnapshot } from "firebase/firestore"
 
@@ -24,14 +24,14 @@ export default function CategoryPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [cursors, setCursors] = useState<(DocumentSnapshot | null)[]>([null])
 
-  const loadPage = useCallback(async (pageNum: number, cursor: DocumentSnapshot | null) => {
-    if (!category) return
+  const loadPage = useCallback(async (cat: any, pageNum: number, cursor: DocumentSnapshot | null) => {
+    if (!cat) return
     setLoading(true)
 
     try {
       let q = query(
         collection(db, "threads"),
-        where("categoryId", "==", category.id),
+        where("categoryId", "==", cat.id),
         orderBy("isPinned", "desc"),
         orderBy("createdAt", "desc"),
         limit(PAGE_SIZE),
@@ -45,14 +45,16 @@ export default function CategoryPage() {
       setPage(pageNum)
 
       if (tSnap.docs.length > 0) {
-        const newCursors = [...cursors]
-        newCursors[pageNum] = tSnap.docs[tSnap.docs.length - 1]
-        setCursors(newCursors)
+        cursorsRef.current = [...cursorsRef.current]
+        cursorsRef.current[pageNum] = tSnap.docs[tSnap.docs.length - 1]
+        setCursors([...cursorsRef.current])
       }
     } finally {
       setLoading(false)
     }
-  }, [category, cursors])
+  }, [])
+
+  const cursorsRef = useRef<(DocumentSnapshot | null)[]>([null])
 
   useEffect(() => {
     async function load() {
@@ -67,15 +69,15 @@ export default function CategoryPage() {
       )
       setTotalPages(Math.max(1, Math.ceil(countSnap.data().count / PAGE_SIZE)))
 
-      await loadPage(1, null)
+      await loadPage(cat, 1, null)
     }
     load()
-  }, [slug])
+  }, [slug, loadPage])
 
   async function goToPage(p: number) {
     if (p < 1 || p > totalPages) return
-    if (cursors[p - 1] !== undefined) {
-      await loadPage(p, cursors[p - 1])
+    if (cursorsRef.current[p - 1] !== undefined) {
+      await loadPage(category, p, cursorsRef.current[p - 1])
     }
   }
 

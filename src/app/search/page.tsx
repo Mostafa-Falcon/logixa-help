@@ -49,12 +49,7 @@ function SearchContent() {
 
         setResults(Array.from(byTitle.values()))
       } catch {
-        const all = await getDocs(collection(db, "threads"))
-        const threads = all.docs.map((d) => ({ id: d.id, ...d.data() }))
-        setResults(threads.filter((t: any) =>
-          t.title?.toLowerCase().includes(term) ||
-          t.content?.toLowerCase().includes(term),
-        ))
+        setResults([{ id: "error", title: "تعذّر البحث الكامل، جرب كلمة مختلفة", slug: "#" }] as any)
       }
       setSearched(true)
       setLoading(false)

@@ -1,10 +1,13 @@
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { Cairo } from 'next/font/google'
+import Script from 'next/script'
 
 import AppProviders from '@/components/AppProviders'
 import PwaRegister from '@/components/PwaRegister'
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
+import Analytics from '@/components/Analytics'
 
 import './globals.css'
 
@@ -94,9 +97,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }),
         }}
       />
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=G-9QC9TQRLTW`}
+        strategy="afterInteractive"
+      />
+      <Script id="ga4-init" strategy="afterInteractive">
+        {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config','G-9QC9TQRLTW',{page_path:window.location.pathname});`}
+      </Script>
       <body className={`${cairo.variable} app-body`}>
         <AppProviders>
           <PwaRegister />
+          <Suspense fallback={null}><Analytics /></Suspense>
           <div className="site-shell">
             <Header />
             <main className="page-shell page-fade-in flex-1 py-6 md:py-8">
