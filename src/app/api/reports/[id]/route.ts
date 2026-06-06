@@ -8,7 +8,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   await updateDoc(doc(db, "reports", id), {
     ...body,
-    reviewed_at: new Date().toISOString(),
+    reviewedAt: new Date().toISOString(),
   })
 
   return NextResponse.json({ success: true })

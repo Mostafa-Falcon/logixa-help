@@ -11,12 +11,11 @@ import {
   updateDoc,
   deleteDoc,
   setDoc,
-  serverTimestamp,
   type QueryConstraint,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
-export { serverTimestamp, doc, collection }
+export { doc, collection }
 
 export async function safeGet<T>(
   collectionName: string,
@@ -64,7 +63,7 @@ export async function safeAdd(
   try {
     const ref = await addDoc(collection(db, collectionName), {
       ...data,
-      created_at: serverTimestamp(),
+      createdAt: new Date().toISOString(),
     })
     return ref.id
   } catch {
@@ -80,7 +79,7 @@ export async function safeUpdate(
   try {
     await updateDoc(doc(db, collectionName, docId), {
       ...data,
-      updated_at: serverTimestamp(),
+      updatedAt: new Date().toISOString(),
     })
     return true
   } catch {
@@ -108,7 +107,7 @@ export async function safeSet(
   try {
     await setDoc(doc(db, collectionName, docId), {
       ...data,
-      created_at: serverTimestamp(),
+      createdAt: new Date().toISOString(),
     })
     return true
   } catch {

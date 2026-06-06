@@ -14,14 +14,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { uid, display_name, bio } = body
+  const { uid, displayName, bio } = body
 
   if (!uid) return NextResponse.json({ error: "uid required" }, { status: 400 })
 
   await updateDoc(doc(db, "profiles", uid), {
-    ...(display_name !== undefined && { display_name }),
+    ...(displayName !== undefined && { displayName }),
     ...(bio !== undefined && { bio }),
-    updated_at: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   })
 
   return NextResponse.json({ success: true })

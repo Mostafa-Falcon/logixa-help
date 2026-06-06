@@ -10,7 +10,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
   const profile = { id: snap.docs[0].id, ...snap.docs[0].data() }
 
   const threadsSnap = await getDocs(
-    query(collection(db, "threads"), where("author_id", "==", snap.docs[0].id), where("status", "==", "published")),
+    query(collection(db, "threads"), where("authorUid", "==", snap.docs[0].id)),
   )
   const threads = threadsSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
 

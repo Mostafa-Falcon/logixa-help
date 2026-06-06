@@ -1,67 +1,68 @@
 export interface Profile {
   id: string
+  uid: string
   username: string
-  display_name: string
-  avatar_url: string
+  displayName: string
+  email: string
+  avatarUrl: string
   bio: string
-  role: "member" | "trusted" | "moderator" | "admin"
+  website: string
+  github: string
+  twitter: string
+  role: "user" | "moderator" | "admin" | "owner"
   reputation: number
-  threads_count: number
-  replies_count: number
-  created_at: string
+  threadCount: number
+  replyCount: number
+  createdAt: string
 }
 
 export interface Category {
   id: string
   name: string
-  slug: string
   description: string
   icon: string
-  sort_order: number
-  threads_count: number
-  replies_count: number
-  last_activity_at: string | null
+  order: number
+  threadCount: number
+  createdAt: string
 }
 
 export interface Thread {
   id: string
-  category_id: string
-  author_id: string
   title: string
   slug: string
-  body: string
-  is_pinned: boolean
-  is_locked: boolean
-  status: "published" | "pending" | "hidden"
-  views: number
-  replies_count: number
-  votes_count: number
-  best_answer_id: string | null
-  created_at: string
-  updated_at: string
-  authorUsername?: string
-  authorAvatarUrl?: string
+  content: string
+  categoryId: string
+  authorUid: string
+  authorUsername: string
+  score: number
+  replyCount: number
+  viewCount: number
+  isPinned: boolean
+  isLocked: boolean
+  isBestAnswer: string | null
+  tags: string[]
+  createdAt: string
+  updatedAt: string
+  lastActivityAt: string
   categoryName?: string
-  categorySlug?: string
 }
 
 export interface Reply {
   id: string
-  thread_id: string
-  author_id: string
-  body: string
-  is_best_answer: boolean
-  status: "visible" | "hidden"
-  votes_count: number
-  created_at: string
-  updated_at: string
-  authorUsername?: string
-  authorAvatarUrl?: string
+  threadId: string
+  parentReplyId: string | null
+  content: string
+  authorUid: string
+  authorUsername: string
+  score: number
+  isBestAnswer: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Tag {
   id: string
   name: string
   slug: string
-  threads_count: number
+  threadCount: number
 }

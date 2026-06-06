@@ -4,14 +4,17 @@ import Link from "next/link"
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { HiChevronLeft, HiHome, HiLightningBolt, HiPencilAlt } from "react-icons/hi"
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore"
+import { LogIn } from "lucide-react"
+import { collection, addDoc, getDocs, query, where, doc, increment, updateDoc } from "firebase/firestore"
 
-import { db, auth } from "@/lib/firebase"
+import { db } from "@/lib/firebase"
+import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import RichEditor from "@/components/RichEditor"
 import { Label } from "@/components/ui/label"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 
 function toSlug(value: string) {
   return value.trim()
@@ -26,15 +29,29 @@ function toSlug(value: string) {
 export default function NewThreadComposer({ categories }: { categories: any[] }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { user } = useAuth()
   const [categoryId, setCategoryId] = useState(searchParams.get("cat") || "")
   const [title, setTitle] = useState("")
   const [body, setBody] = useState("")
+  const [tagInput, setTagInput] = useState("")
+  const [tags, setTags] = useState<string[]>([])
   const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
 
+  function addTag() {
+    const t = tagInput.trim().toLowerCase().replace(/[^a-z\u0600-\u06FF0-9-]/g, "").slice(0, 20)
+    if (t && !tags.includes(t) && tags.length < 5) {
+      setTags([...tags, t])
+      setTagInput("")
+    }
+  }
+
+  function removeTag(t: string) {
+    setTags(tags.filter((x) => x !== t))
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const user = auth.currentUser
     if (!user) { setError("يجب تسجيل الدخول أولاً"); return }
 
     setSending(true)
@@ -46,21 +63,29 @@ export default function NewThreadComposer({ categories }: { categories: any[] })
       const slug = existing.empty ? baseSlug : `${baseSlug}-${Date.now()}`
 
       const ref = await addDoc(collection(db, "threads"), {
-        category_id: categoryId,
-        author_id: user.uid,
-        authorUsername: user.displayName || user.email?.split("@")[0],
         title,
         slug,
-        body,
-        status: "published",
-        is_pinned: false,
-        is_locked: false,
-        views: 0,
-        replies_count: 0,
-        votes_count: 0,
-        best_answer_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        content: body,
+        categoryId,
+        authorUid: user.uid,
+        authorUsername: user.displayName || user.email?.split("@")[0],
+        score: 0,
+        replyCount: 0,
+        viewCount: 0,
+        isPinned: false,
+        isLocked: false,
+        isBestAnswer: null,
+        tags,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastActivityAt: new Date().toISOString(),
+      })
+
+      await updateDoc(doc(db, "categories", categoryId), {
+        threadCount: increment(1),
+      })
+      await updateDoc(doc(db, "profiles", user.uid), {
+        threadCount: increment(1),
       })
 
       router.push(`/t/${slug}`)
@@ -79,7 +104,18 @@ export default function NewThreadComposer({ categories }: { categories: any[] })
         <span>سؤال جديد</span>
       </div>
 
-      <div className="editor-grid items-start">
+      {!user && (
+        <div className="surface-card p-8 text-center">
+          <LogIn className="mx-auto h-10 w-10 muted" />
+          <h2 className="mt-4 text-xl font-extrabold text-white">تسجيل الدخول مطلوب</h2>
+          <p className="mt-2 text-sm muted">يجب تسجيل الدخول حتى تتمكن من نشر موضوع جديد</p>
+          <Button asChild variant="primary" className="mt-5">
+            <Link href="/login"><LogIn className="h-4 w-4" /> تسجيل الدخول</Link>
+          </Button>
+        </div>
+      )}
+
+      {user && <div className="editor-grid items-start">
         <section className="surface-card hero-panel px-5 py-6 md:px-7">
           <span className="eyebrow">صياغة سؤال جيد</span>
           <h1 className="mt-4 page-title text-3xl md:text-4xl">اكتب سؤالك كأنك توفر على شخص آخر ساعة كاملة</h1>
@@ -123,8 +159,25 @@ export default function NewThreadComposer({ categories }: { categories: any[] })
             </div>
 
             <div>
+              <Label>الوسوم (اختياري، حتى 5)</Label>
+              <div className="flex gap-2">
+                <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag() } }} placeholder="اضف وسماً ثم Enter" />
+                <Button type="button" variant="outline" onClick={addTag}>إضافة</Button>
+              </div>
+              {tags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {tags.map((t) => (
+                    <Badge key={t} variant="brand" className="cursor-pointer" onClick={() => removeTag(t)}>
+                      {t} ×
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
               <Label>شرح المشكلة</Label>
-              <Textarea value={body} onChange={(e) => setBody(e.target.value)} required rows={10} placeholder="اشرح المشكلة، الخطوات، الرسائل التي ظهرت، وما الذي جربته حتى الآن..." />
+              <RichEditor value={body} onChange={setBody} placeholder="اشرح المشكلة، الخطوات، الرسائل التي ظهرت، وما الذي جربته حتى الآن..." />
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -135,7 +188,7 @@ export default function NewThreadComposer({ categories }: { categories: any[] })
             </div>
           </form>
         </section>
-      </div>
+      </div>}
     </div>
   )
 }

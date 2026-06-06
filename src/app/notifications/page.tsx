@@ -34,7 +34,7 @@ export default function NotificationsPage() {
 
     async function load() {
       const snap = await getDocs(
-        query(collection(db, "notifications"), where("user_id", "==", pid), orderBy("created_at", "desc"), limit(50)),
+        query(collection(db, "notifications"), where("recipientUid", "==", pid), orderBy("createdAt", "desc"), limit(50)),
       )
       setNotifications(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
       setLoading(false)
@@ -46,17 +46,17 @@ export default function NotificationsPage() {
     try {
       const batch = writeBatch(db)
       notifications.forEach((n: any) => {
-        if (!n.is_read) batch.update(doc(db, "notifications", n.id), { is_read: true })
+        if (!n.isRead) batch.update(doc(db, "notifications", n.id), { isRead: true })
       })
       await batch.commit()
-      setNotifications((prev: any[]) => prev.map((n: any) => ({ ...n, is_read: true })))
+      setNotifications((prev: any[]) => prev.map((n: any) => ({ ...n, isRead: true })))
       toast.success("تم تحديد الكل كمقروء")
     } catch {
       toast.error("حدث خطأ")
     }
   }
 
-  const unreadCount = notifications.filter((n: any) => !n.is_read).length
+  const unreadCount = notifications.filter((n: any) => !n.isRead).length
   if (authLoading || loading) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">جارٍ التحميل...</div></div>
 
   return (
@@ -90,29 +90,29 @@ export default function NotificationsPage() {
           <div>
             {notifications.map((n: any, i: number) => (
               <div key={n.id} className="node block"
-                style={{ borderBottom: i < notifications.length - 1 ? "1px solid rgba(224, 197, 132, 0.1)" : "none", opacity: n.is_read ? 0.6 : 1 }}>
+                style={{ borderBottom: i < notifications.length - 1 ? "1px solid rgba(224, 197, 132, 0.1)" : "none", opacity: n.isRead ? 0.6 : 1 }}>
                 {n.link ? (
                   <Link href={n.link} className="node-body no-underline">
-                    <div className="node-icon" style={{ color: n.is_read ? "rgba(224, 197, 132, 0.4)" : "rgba(224, 182, 92, 0.9)" }}>
+                    <div className="node-icon" style={{ color: n.isRead ? "rgba(224, 197, 132, 0.4)" : "rgba(224, 182, 92, 0.9)" }}>
                       {iconMap[n.type] ?? <Bell className="h-5 w-5" />}
                     </div>
                     <div className="node-main">
-                      <div className="node-title" style={{ fontWeight: n.is_read ? 400 : 700 }}>{n.title}</div>
+                      <div className="node-title" style={{ fontWeight: n.isRead ? 400 : 700 }}>{n.title}</div>
                       {n.body && <div className="node-desc">{n.body}</div>}
                       <div className="node-stats-row">
                         <span className="text-xs muted">
-                          {new Date(n.created_at).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "numeric" })}
+                          {new Date(n.createdAt).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "numeric" })}
                         </span>
                       </div>
                     </div>
                   </Link>
                 ) : (
                   <div className="node-body">
-                    <div className="node-icon" style={{ color: n.is_read ? "rgba(224, 197, 132, 0.4)" : "rgba(224, 182, 92, 0.9)" }}>
+                    <div className="node-icon" style={{ color: n.isRead ? "rgba(224, 197, 132, 0.4)" : "rgba(224, 182, 92, 0.9)" }}>
                       {iconMap[n.type] ?? <Bell className="h-5 w-5" />}
                     </div>
                     <div className="node-main">
-                      <div className="node-title" style={{ fontWeight: n.is_read ? 400 : 700 }}>{n.title}</div>
+                      <div className="node-title" style={{ fontWeight: n.isRead ? 400 : 700 }}>{n.title}</div>
                       {n.body && <div className="node-desc">{n.body}</div>}
                     </div>
                   </div>

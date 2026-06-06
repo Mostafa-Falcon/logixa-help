@@ -10,7 +10,7 @@ function NewThreadPageInner() {
   const [categories, setCategories] = useState<any[]>([])
 
   useEffect(() => {
-    getDocs(query(collection(db, "categories"), orderBy("sort_order")))
+    getDocs(query(collection(db, "categories"), orderBy("order")))
       .then((snap) => setCategories(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
   }, [])
 

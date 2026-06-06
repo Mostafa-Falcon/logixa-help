@@ -19,14 +19,14 @@ export function Sidebar() {
       const [ts, us, ps] = await Promise.all([
         getDocs(collection(db, "threads")),
         getDocs(collection(db, "profiles")),
-        getDocs(query(collection(db, "profiles"), orderBy("created_at", "desc"), limit(1))),
+        getDocs(query(collection(db, "profiles"), orderBy("createdAt", "desc"), limit(1))),
       ])
       setTotalThreads(ts.size)
       setTotalUsers(us.size)
       if (!ps.empty) setLatestUser(ps.docs[0].data().username ?? "")
 
       const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
-      const online = await getDocs(query(collection(db, "user_sessions"), where("last_seen_at", ">=", fifteenMinAgo)))
+      const online = await getDocs(query(collection(db, "user_sessions"), where("lastSeenAt", ">=", fifteenMinAgo)))
       setOnlineCount(online.size)
     }
     load()

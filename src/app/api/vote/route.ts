@@ -4,18 +4,18 @@ import { db } from "@/lib/firebase"
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { user_id, target_type, target_id, value } = body
+  const { userId, targetType, targetId, value } = body
 
-  if (!user_id || !target_type || !target_id || !value) {
+  if (!userId || !targetType || !targetId || !value) {
     return NextResponse.json({ error: "بيانات ناقصة" }, { status: 400 })
   }
 
   const existing = await getDocs(
     query(
       collection(db, "votes"),
-      where("user_id", "==", user_id),
-      where("target_type", "==", target_type),
-      where("target_id", "==", target_id),
+      where("userId", "==", userId),
+      where("targetType", "==", targetType),
+      where("targetId", "==", targetId),
     ),
   )
 
@@ -28,16 +28,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ action: "removed" })
     }
 
-    await updateDoc(doc(db, "votes", voteDoc.id), { value, updated_at: new Date().toISOString() })
+    await updateDoc(doc(db, "votes", voteDoc.id), { value, updatedAt: new Date().toISOString() })
     return NextResponse.json({ action: "changed" })
   }
 
   await addDoc(collection(db, "votes"), {
-    user_id,
-    target_type,
-    target_id,
+    userId,
+    targetType,
+    targetId,
     value,
-    created_at: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
   })
 
   return NextResponse.json({ action: "added" })

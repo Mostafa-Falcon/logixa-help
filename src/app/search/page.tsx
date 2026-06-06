@@ -27,7 +27,7 @@ function SearchContent() {
       const threads = all.docs.map((d) => ({ id: d.id, ...d.data() }))
       const filtered = threads.filter((t: any) =>
         t.title?.toLowerCase().includes(q.toLowerCase()) ||
-        t.body?.toLowerCase().includes(q.toLowerCase()),
+        t.content?.toLowerCase().includes(q.toLowerCase()),
       )
       setResults(filtered)
       setSearched(true)
@@ -73,8 +73,8 @@ function SearchContent() {
                       <div className="node-main">
                         <div className="node-title">{t.title}</div>
                         <div className="node-stats-row">
-                          <span>المشاهدات: <strong>{t.views ?? 0}</strong></span>
-                          <span>الردود: <strong>{t.replies_count ?? 0}</strong></span>
+                          <span>المشاهدات: <strong>{t.viewCount ?? 0}</strong></span>
+                          <span>الردود: <strong>{t.replyCount ?? 0}</strong></span>
                         </div>
                       </div>
                       <div className="meta-pill">

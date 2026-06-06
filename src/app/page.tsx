@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { ArrowLeft, BookOpen, Layers, MessageSquare, Plus, Search, Sparkles, TrendingUp, Zap } from "lucide-react"
+import { ArrowLeft, BookOpen, Layers, MessageSquare, Pin, Plus, Search, Sparkles, TrendingUp, Zap } from "lucide-react"
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore"
 
 import { db } from "@/lib/firebase"
@@ -25,14 +25,14 @@ export default function HomePage() {
   useEffect(() => {
     async function load() {
       try {
-        const catSnap = await getDocs(query(collection(db, "categories"), orderBy("sort_order")))
-        const cats = catSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Category)
+        const catSnap = await getDocs(query(collection(db, "categories"), orderBy("order")))
+        const cats = catSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as unknown as Category)
         setCategories(cats)
 
         const [ts, rs, us] = await Promise.all([
           getDocs(collection(db, "threads")),
           getDocs(collection(db, "replies")),
-          getDocs(query(collection(db, "profiles"), orderBy("created_at", "desc"), limit(1))),
+          getDocs(query(collection(db, "profiles"), orderBy("createdAt", "desc"), limit(1))),
         ])
         setTotalThreads(ts.size)
         setTotalReplies(rs.size)
@@ -40,7 +40,7 @@ export default function HomePage() {
         if (!us.empty) setLatestUser(us.docs[0].data().username ?? null)
 
         const threadSnap = await getDocs(
-          query(collection(db, "threads"), orderBy("created_at", "desc"), limit(6)),
+          query(collection(db, "threads"), orderBy("createdAt", "desc"), limit(6)),
         )
         setLatestThreads(
           threadSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
@@ -135,7 +135,7 @@ export default function HomePage() {
             <div className="mx-auto node-icon text-2xl">
               <Layers className="h-8 w-8" />
             </div>
-            <h3 className="mt-4 text-xl font-extrabold text-white">المنتدي لسه جديد — أول قسم ينتظرك</h3>
+            <h3 className="mt-4 text-xl font-extrabold text-white">المنتدى لسه جديد — أول قسم ينتظرك</h3>
             <p className="mx-auto mt-3 max-w-lg text-sm muted">الأقسام بتتضاف من لوحة الإدارة المخصصة للمشرفين، لكن المحتوى الحقيقي بيبدألما أول شخص يفتح موضوع.</p>
             <div className="mt-5 flex flex-wrap justify-center gap-3">
               <Button asChild variant="primary">
@@ -150,7 +150,7 @@ export default function HomePage() {
           <div className="grid gap-4">
             {categories.map((category) => (
               <Card key={category.id} variant="section" className="node block p-5 no-underline md:p-6">
-                <Link href={`/c/${category.slug}`} className="block">
+                <Link href={`/c/${category.id}`} className="block">
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="flex items-start gap-4">
                       <div className="node-icon text-xl">{category.icon}</div>
@@ -161,8 +161,7 @@ export default function HomePage() {
                         </div>
                         <p className="node-desc max-w-3xl">{category.description}</p>
                         <div className="node-stats-row">
-                          <span>الموضوعات: <strong>{category.threads_count}</strong></span>
-                          <span>الردود: <strong>{category.replies_count}</strong></span>
+                          <span>الموضوعات: <strong>{category.threadCount}</strong></span>
                         </div>
                       </div>
                     </div>
@@ -240,12 +239,21 @@ export default function HomePage() {
                   <div className="node-body">
                     <div className="node-icon"><BookOpen className="h-5 w-5" /></div>
                     <div className="node-main">
-                      <div className="node-title">{thread.title}</div>
-                      <div className="node-stats-row">
-                        {thread.categoryName && <span>في <strong>{thread.categoryName}</strong></span>}
-                        <span>المشاهدات: <strong>{thread.views ?? 0}</strong></span>
-                        <span>الردود: <strong>{thread.replies_count ?? 0}</strong></span>
+                      <div className="node-title">
+                        {thread.isPinned && <Pin className="ml-1 inline h-3.5 w-3.5 text-amber-400" />}
+                        {thread.title}
                       </div>
+                      <div className="node-stats-row">
+                        <span>المشاهدات: <strong>{thread.viewCount ?? 0}</strong></span>
+                        <span>الردود: <strong>{thread.replyCount ?? 0}</strong></span>
+                      </div>
+                      {thread.tags?.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {thread.tags.map((tag: string) => (
+                            <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-white/60">{tag}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="meta-pill">
                       اقرأ

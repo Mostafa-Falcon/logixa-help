@@ -21,7 +21,7 @@ export default function ModeratePage() {
     if (!profile || (profile.role !== "admin" && profile.role !== "moderator")) { router.push("/"); return }
 
     async function load() {
-      const snap = await getDocs(query(collection(db, "reports"), orderBy("created_at", "desc")))
+      const snap = await getDocs(query(collection(db, "reports"), orderBy("createdAt", "desc")))
       setReports(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
       setLoading(false)
     }
@@ -29,7 +29,7 @@ export default function ModeratePage() {
   }, [profile, authLoading, router])
 
   async function updateStatus(reportId: string, status: string) {
-    await updateDoc(doc(db, "reports", reportId), { status, reviewed_at: new Date().toISOString() })
+    await updateDoc(doc(db, "reports", reportId), { status, reviewedAt: new Date().toISOString() })
     setReports((prev) => prev.map((r: any) => r.id === reportId ? { ...r, status } : r))
   }
 
@@ -53,9 +53,9 @@ export default function ModeratePage() {
             <div key={r.id} className="node" style={{ borderBottom: "1px solid rgba(224, 197, 132, 0.1)" }}>
               <div className="node-body">
                 <div className="node-main">
-                  <div className="node-title">{r.target_type === "thread" ? "📄 موضوع" : "💬 رد"} — {r.reason?.slice(0, 80)}</div>
+                  <div className="node-title">{r.targetType === "thread" ? "📄 موضوع" : "💬 رد"} — {r.reason?.slice(0, 80)}</div>
                   <div className="node-stats-row">
-                    <span>{new Date(r.created_at).toLocaleDateString("ar-EG")}</span>
+                    <span>{new Date(r.createdAt).toLocaleDateString("ar-EG")}</span>
                   </div>
                 </div>
                 <div className="flex gap-2">

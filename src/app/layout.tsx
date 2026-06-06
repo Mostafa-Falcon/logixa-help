@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Cairo } from 'next/font/google'
 
 import AppProviders from '@/components/AppProviders'
+import PwaRegister from '@/components/PwaRegister'
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
 
@@ -56,8 +57,46 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       <meta name="monetag" content="2c3d32eb5adf91efa4499e66f4def7bd" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Logixa Help",
+            "alternateName": "منتدى Logixa Help",
+            "url": baseUrl,
+            "description": "منتدى عربي تقني للأسئلة والحلول في الكمبيوتر، الموبايل، البرمجة، والذكاء الاصطناعي.",
+            "inLanguage": "ar",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": `${baseUrl}/search?q={search_term_string}`
+              },
+              "query-input": "required name=search_term_string"
+            }
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "Logixa Help Forum",
+            "url": baseUrl,
+            "applicationCategory": "Forum",
+            "operatingSystem": "All",
+            "description": "منصة عربية للأسئلة والإجابات التقنية",
+            "inLanguage": "ar",
+          }),
+        }}
+      />
       <body className={`${cairo.variable} app-body`}>
         <AppProviders>
+          <PwaRegister />
           <div className="site-shell">
             <Header />
             <main className="page-shell page-fade-in flex-1 py-6 md:py-8">

@@ -29,12 +29,12 @@ export default function ReportButton({ targetType, targetId }: ReportButtonProps
     setSubmitting(true)
     try {
       await addDoc(collection(db, "reports"), {
-        reporter_id: user.uid,
-        target_type: targetType,
-        target_id: targetId,
+        reporterUid: user.uid,
+        targetType,
+        targetId,
         reason: reason.trim(),
         status: "open",
-        created_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       })
       toast.success("تم الإبلاغ بنجاح")
       setOpen(false)

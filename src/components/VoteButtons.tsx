@@ -23,7 +23,7 @@ export function VoteButtons({ targetType, targetId, votesCount: initial }: VoteB
 
     try {
       const existing = await getDocs(
-        query(collection(db, "votes"), where("user_id", "==", user.uid), where("target_type", "==", targetType), where("target_id", "==", targetId)),
+        query(collection(db, "votes"), where("userId", "==", user.uid), where("targetType", "==", targetType), where("targetId", "==", targetId)),
       )
 
       if (!existing.empty) {
@@ -38,13 +38,13 @@ export function VoteButtons({ targetType, targetId, votesCount: initial }: VoteB
         }
 
         await deleteDoc(doc(db, "votes", vote.id))
-        await addDoc(collection(db, "votes"), { user_id: user.uid, target_type: targetType, target_id: targetId, value, created_at: new Date().toISOString() })
+        await addDoc(collection(db, "votes"), { userId: user.uid, targetType, targetId, value, createdAt: new Date().toISOString() })
         setUserVote(value)
         setCount((c) => c - voteData.value + value)
         return
       }
 
-      await addDoc(collection(db, "votes"), { user_id: user.uid, target_type: targetType, target_id: targetId, value, created_at: new Date().toISOString() })
+      await addDoc(collection(db, "votes"), { userId: user.uid, targetType, targetId, value, createdAt: new Date().toISOString() })
       setUserVote(value)
       setCount((c) => c + value)
     } catch {

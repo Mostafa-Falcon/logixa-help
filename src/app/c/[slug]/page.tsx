@@ -3,8 +3,8 @@
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { ArrowLeft, BookOpen, MessageSquare, Plus, Sparkles } from "lucide-react"
-import { collection, getDocs, query, where, orderBy } from "firebase/firestore"
+import { ArrowLeft, BookOpen, MessageSquare, Plus, Pin, Sparkles } from "lucide-react"
+import { collection, getDocs, query, where, orderBy, doc, getDoc } from "firebase/firestore"
 
 import { db } from "@/lib/firebase"
 import { Badge } from "@/components/ui/badge"
@@ -20,15 +20,20 @@ export default function CategoryPage() {
 
   useEffect(() => {
     async function load() {
-      const catSnap = await getDocs(query(collection(db, "categories"), where("slug", "==", slug)))
-      if (catSnap.empty) { setLoading(false); return }
-      const cat = { id: catSnap.docs[0].id, ...catSnap.docs[0].data() }
+      const catRef = doc(db, "categories", slug as string)
+      const catSnap = await getDoc(catRef)
+      if (!catSnap.exists()) { setLoading(false); return }
+      const cat = { id: catSnap.id, ...catSnap.data() }
       setCategory(cat)
 
       const tSnap = await getDocs(
-        query(collection(db, "threads"), where("category_id", "==", cat.id), where("status", "==", "published"), orderBy("created_at", "desc")),
+        query(collection(db, "threads"), where("categoryId", "==", cat.id)),
       )
-      setThreads(tSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      const all = tSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      const pinned = all.filter((t: any) => t.isPinned)
+      const rest = all.filter((t: any) => !t.isPinned)
+      rest.sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+      setThreads([...pinned, ...rest])
       setLoading(false)
     }
     load()
@@ -42,7 +47,7 @@ export default function CategoryPage() {
       <PageHeader
         eyebrow={`${category.icon} ${category.name}`}
         title={category.description}
-        description={`${category.threads_count ?? 0} موضوع · ${category.replies_count ?? 0} رد`}
+        description={`${category.threadCount ?? 0} موضوع`}
         actions={
           <Button asChild variant="primary">
             <Link href={`/t/new?cat=${category.id}`}>
@@ -82,11 +87,15 @@ export default function CategoryPage() {
               <div className="node-body">
                 <div className="node-icon"><BookOpen className="h-5 w-5" /></div>
                 <div className="node-main">
-                  <div className="node-title">{thread.title}</div>
+                  <div className="node-title">
+                    {thread.isPinned && <Pin className="ml-1 inline h-3.5 w-3.5 text-amber-400" />}
+                    {thread.title}
+                  </div>
                   <div className="node-stats-row">
-                    <span>المشاهدات: <strong>{thread.views ?? 0}</strong></span>
-                    <span>الردود: <strong>{thread.replies_count ?? 0}</strong></span>
-                    <span>التصويتات: <strong>{thread.votes_count ?? 0}</strong></span>
+                    {thread.isPinned && <Badge variant="brand">مثبت</Badge>}
+                    <span>المشاهدات: <strong>{thread.viewCount ?? 0}</strong></span>
+                    <span>الردود: <strong>{thread.replyCount ?? 0}</strong></span>
+                    <span>التصويتات: <strong>{thread.score ?? 0}</strong></span>
                   </div>
                 </div>
                 <div className="meta-pill">

@@ -1,0 +1,69 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "threads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "categoryId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "threads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "categoryId", "order": "ASCENDING" },
+        { "fieldPath": "isPinned", "order": "DESCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "threads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "authorUid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "replies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "threadId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "recipientUid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "votes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "targetType", "order": "ASCENDING" },
+        { "fieldPath": "targetId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "profiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "threads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "slug", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

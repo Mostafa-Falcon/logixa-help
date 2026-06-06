@@ -1,15 +1,26 @@
 {
-  "name": "Logixa Help - منتدى عربي تقني",
-  "short_name": "Logixa Help",
-  "description": "منتدى عربي تقني للأسئلة والحلول — مشاكل الكمبيوتر، الموبايل، البرمجة، والذكاء الاصطناعي",
+  "name": "Logixa Help",
+  "short_name": "Logixa",
+  "description": "منتدى تقني عربي — اسأل وأجب مع مجتمع Logixa",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#11130f",
-  "theme_color": "#11130f",
+  "background_color": "#0a0f0a",
+  "theme_color": "#369985",
   "orientation": "portrait",
   "dir": "rtl",
   "lang": "ar",
   "icons": [
-    { "src": "/icon.svg", "sizes": "512x512", "type": "image/svg+xml" }
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }

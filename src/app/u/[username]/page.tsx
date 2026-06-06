@@ -6,7 +6,6 @@ import { collection, getDocs, query, where } from "firebase/firestore"
 
 import { db } from "@/lib/firebase"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { PageHeader } from "@/components/ui/page-header"
 
@@ -23,7 +22,7 @@ export default function UserProfilePage() {
       const p = { id: pSnap.docs[0].id, ...pSnap.docs[0].data() }
       setProfile(p)
 
-      const tSnap = await getDocs(query(collection(db, "threads"), where("author_id", "==", p.id), where("status", "==", "published")))
+      const tSnap = await getDocs(query(collection(db, "threads"), where("authorUid", "==", p.id)))
       setThreads(tSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
       setLoading(false)
     }
@@ -37,7 +36,7 @@ export default function UserProfilePage() {
     <div className="content-wrap space-y-5">
       <PageHeader
         eyebrow="الملف الشخصي"
-        title={profile.display_name || profile.username}
+        title={profile.displayName || profile.username}
         description={profile.bio || "لم يكتب نبذة عن نفسه بعد"}
       />
 
@@ -45,11 +44,11 @@ export default function UserProfilePage() {
         <div className="flex items-center gap-4">
           <div className="avatar h-14 w-14 text-lg">{profile.username.slice(0, 1)}</div>
           <div>
-            <h2 className="text-xl font-extrabold text-white">{profile.display_name || profile.username}</h2>
+            <h2 className="text-xl font-extrabold text-white">{profile.displayName || profile.username}</h2>
             <p className="text-sm muted">@{profile.username}</p>
             <div className="flex gap-3 mt-2 text-xs muted">
-              <span>الموضوعات: {profile.threads_count ?? 0}</span>
-              <span>الردود: {profile.replies_count ?? 0}</span>
+              <span>الموضوعات: {profile.threadCount ?? 0}</span>
+              <span>الردود: {profile.replyCount ?? 0}</span>
               <span>السمعة: {profile.reputation ?? 0}</span>
             </div>
           </div>
@@ -66,7 +65,7 @@ export default function UserProfilePage() {
             {threads.map((t: any) => (
               <Card key={t.id} variant="section" padding="md">
                 <a href={`/t/${t.slug}`} className="block text-white font-bold hover:accent-text">{t.title}</a>
-                <p className="text-xs muted mt-1">{t.replies_count ?? 0} ردود · {t.views ?? 0} مشاهدة</p>
+                <p className="text-xs muted mt-1">{t.replyCount ?? 0} ردود · {t.viewCount ?? 0} مشاهدة</p>
               </Card>
             ))}
           </div>

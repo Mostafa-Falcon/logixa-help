@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { FolderPlus, Plus, RotateCcw } from "lucide-react"
-import { collection, getDocs, query, orderBy, addDoc, doc, deleteDoc } from "firebase/firestore"
+import { collection, getDocs, query, orderBy, setDoc, doc, deleteDoc } from "firebase/firestore"
 import { toast } from "sonner"
 
 import { db } from "@/lib/firebase"
@@ -30,8 +30,8 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (loading) return
-    if (!profile || profile.role !== "admin") { router.push("/"); return }
-    getDocs(query(collection(db, "categories"), orderBy("sort_order"))).then((snap) =>
+    if (!profile || (profile.role !== "owner" && profile.role !== "moderator")) { router.push("/"); return }
+    getDocs(query(collection(db, "categories"), orderBy("order"))).then((snap) =>
       setCategories(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
     )
   }, [profile, loading, router])
@@ -40,12 +40,13 @@ export default function AdminPage() {
     e.preventDefault()
     setSaving(true)
     try {
-      await addDoc(collection(db, "categories"), {
-        name, slug: slug || toSlug(name), description, icon, sort_order: categories.length + 1, threads_count: 0, replies_count: 0, created_at: new Date().toISOString(),
+      const catSlug = slug || toSlug(name)
+      await setDoc(doc(db, "categories", catSlug), {
+        name, slug: catSlug, description, icon, order: categories.length + 1, threadCount: 0, createdAt: new Date().toISOString(),
       })
       toast.success("تم إنشاء القسم")
       setName(""); setSlug(""); setDescription(""); setIcon("💬")
-      const snap = await getDocs(query(collection(db, "categories"), orderBy("sort_order")))
+      const snap = await getDocs(query(collection(db, "categories"), orderBy("order")))
       setCategories(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     } catch { toast.error("فشل إنشاء القسم") }
     finally { setSaving(false) }
@@ -92,7 +93,7 @@ export default function AdminPage() {
                     <span className="text-lg">{c.icon}</span>
                     <div>
                       <div className="text-sm font-bold text-white">{c.name}</div>
-                      <div className="text-xs muted">{c.slug} · {c.threads_count ?? 0} موضوعات</div>
+                      <div className="text-xs muted">{c.slug} · {c.threadCount ?? 0} موضوعات</div>
                     </div>
                   </div>
                   <Button type="button" variant="ghost" size="sm" onClick={() => deleteCategory(c.id)}>حذف</Button>

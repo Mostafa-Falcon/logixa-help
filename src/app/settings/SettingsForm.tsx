@@ -20,7 +20,7 @@ export default function SettingsForm() {
 
   useEffect(() => {
     if (profile) {
-      setDisplayName(profile.display_name ?? "")
+      setDisplayName(profile.displayName ?? "")
       setBio(profile.bio ?? "")
     }
   }, [profile])
@@ -31,9 +31,9 @@ export default function SettingsForm() {
     setSending(true)
     try {
       await updateDoc(doc(db, "profiles", profile.id), {
-        display_name: displayName,
+        displayName,
         bio,
-        updated_at: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       })
       toast.success("تم تحديث الملف الشخصي")
     } catch {
@@ -49,8 +49,8 @@ export default function SettingsForm() {
     <section className="surface-card p-5 md:p-7">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <Label htmlFor="display_name"><User className="ml-1 inline h-4 w-4" /> الاسم المعروض</Label>
-          <Input id="display_name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="الاسم الذي يظهر للجميع" maxLength={60} />
+          <Label htmlFor="displayName"><User className="ml-1 inline h-4 w-4" /> الاسم المعروض</Label>
+          <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="الاسم الذي يظهر للجميع" maxLength={60} />
           <p className="mt-1 text-xs muted">اسمك المعروض داخل المنتدى، اختياري.</p>
         </div>
 

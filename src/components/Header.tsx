@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import {
-  CirclePlus, Home, Layers, LogIn, LogOut, Menu, Search, ShieldCheck, UserPlus, X,
+  CirclePlus, Home, Layers, LogIn, LogOut, Menu, Search, ShieldCheck, Trophy, UserPlus, X,
 } from "lucide-react"
 import { signOut } from "firebase/auth"
 
@@ -16,6 +16,7 @@ import { OnlineCounter } from "@/components/OnlineCounter"
 const NAV_LINKS = [
   { href: "/", label: "الرئيسية", icon: Home },
   { href: "/#sections", label: "الأقسام", icon: Layers },
+  { href: "/leaderboard", label: "المتصدرين", icon: Trophy },
   { href: "/search", label: "بحث", icon: Search },
   { href: "/t/new", label: "اسأل سؤالًا", icon: CirclePlus },
 ]
