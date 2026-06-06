@@ -40,14 +40,14 @@ export default function ModeratePage() {
 
   return (
     <div className="content-wrap space-y-5">
-      <PageHeader eyebrow="لوحة الإشراف" title="الإشراف على البلاغات" description="راجع البلاغات المقدمة من الأعضاء، واتخذ الإجراء المناسب." icon={<ShieldCheck className="h-6 w-6" />} />
+      <PageHeader eyebrow="الإشراف" title="إدارة البلاغات" description="راجع البلاغات واتخذ الإجراء المناسب." icon={<ShieldCheck className="h-6 w-6" />} />
 
       <section className="block-container">
         <div className="block-header">
           <span>بلاغات مفتوحة ({openReports.length})</span>
         </div>
         {openReports.length === 0 ? (
-          <div className="p-6 text-sm muted">لا توجد بلاغات مفتوحة.</div>
+          <div className="p-6 text-sm muted">مفيش بلاغات مفتوحة</div>
         ) : (
           openReports.map((r: any) => (
             <div key={r.id} className="node" style={{ borderBottom: "1px solid rgba(224, 197, 132, 0.1)" }}>
@@ -59,7 +59,7 @@ export default function ModeratePage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="primary" onClick={() => updateStatus(r.id, "resolved")}>حل</Button>
+                  <Button size="sm" variant="primary" onClick={() => updateStatus(r.id, "resolved")}>قبول</Button>
                   <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "dismissed")}>رفض</Button>
                 </div>
               </div>
@@ -70,7 +70,7 @@ export default function ModeratePage() {
 
       {resolved.length > 0 && (
         <section className="block-container">
-          <div className="block-header"><span>تمت المعالجة ({resolved.length})</span></div>
+          <div className="block-header"><span>تم التعامل ({resolved.length})</span></div>
           {resolved.map((r: any) => (
             <div key={r.id} className="node" style={{ borderBottom: "1px solid rgba(224, 197, 132, 0.1)" }}>
               <div className="node-body">
@@ -78,7 +78,7 @@ export default function ModeratePage() {
                   <div className="node-title">{r.reason?.slice(0, 80)}</div>
                   <div className="node-stats-row">
                     <span className={r.status === "resolved" ? "text-green-400" : "text-amber-400"}>
-                      {r.status === "resolved" ? "تم الحل" : "مرفوض"}
+                      {r.status === "resolved" ? "تم القبول" : "مرفوض"}
                     </span>
                   </div>
                 </div>

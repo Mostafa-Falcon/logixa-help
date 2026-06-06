@@ -41,16 +41,16 @@ export default function LeaderboardPage() {
       </div>
 
       <PageHeader
-        eyebrow="المتصدرين"
-        title="أكثر الأعضاء نشاطاً"
-        description="ترتيب الأعضاء حسب السمعة — تفاعل أكثر = سمعة أعلى"
+        eyebrow="الترتيب"
+        title="الأكثر تفاعلاً"
+        description="ترتيب حسب النقاط — كلما شاركت، كلما زادت نقاطك"
         icon={<Trophy className="h-full w-full" />}
       />
 
       <section className="block-container">
-        <div className="block-header"><span>أفضل 50 عضواً</span></div>
+        <div className="block-header"><span>أفضل 50 عضو</span></div>
         {users.length === 0 ? (
-          <div className="p-6 text-sm muted">لا يوجد أعضاء بعد</div>
+          <div className="p-6 text-sm muted">لسه مفيش أعضاء</div>
         ) : (
           <div>
             {users.map((u: any, i: number) => (
@@ -72,8 +72,8 @@ export default function LeaderboardPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
-                    <span className="muted">الموضوعات: <strong className="text-white">{u.threadCount ?? 0}</strong></span>
-                    <span className="muted">الردود: <strong className="text-white">{u.replyCount ?? 0}</strong></span>
+                    <span className="muted">مواضيع: <strong className="text-white">{u.threadCount ?? 0}</strong></span>
+                    <span className="muted">ردود: <strong className="text-white">{u.replyCount ?? 0}</strong></span>
                     <span className="flex items-center gap-1 font-bold text-amber-400">{u.reputation ?? 0} <Trophy className="h-4 w-4" /></span>
                   </div>
                 </div>

@@ -35,9 +35,9 @@ export default function SettingsForm() {
         bio,
         updatedAt: new Date().toISOString(),
       })
-      toast.success("تم تحديث الملف الشخصي")
+      toast.success("تم تحديث بياناتك")
     } catch {
-      toast.error("حدث خطأ أثناء الحفظ")
+      toast.error("حصل خطأ أثناء الحفظ")
     } finally {
       setSending(false)
     }
@@ -49,19 +49,19 @@ export default function SettingsForm() {
     <section className="surface-card p-5 md:p-7">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <Label htmlFor="displayName"><User className="ml-1 inline h-4 w-4" /> الاسم المعروض</Label>
-          <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="الاسم الذي يظهر للجميع" maxLength={60} />
-          <p className="mt-1 text-xs muted">اسمك المعروض داخل المنتدى، اختياري.</p>
+          <Label htmlFor="displayName"><User className="ml-1 inline h-4 w-4" /> اسم العرض</Label>
+          <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="الاسم اللي يظهر للكل" maxLength={60} />
+          <p className="mt-1 text-xs muted">الاسم اللي الكل يشوفه. اختياري.</p>
         </div>
 
         <div>
           <Label htmlFor="bio"><FileText className="ml-1 inline h-4 w-4" /> نبذة عنك</Label>
-          <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} className="min-h-[120px]" placeholder="نبذة مختصرة عن نفسك" maxLength={500} />
-          <p className="mt-1 text-xs muted">أقل من 500 حرف. تظهر في ملفك الشخصي.</p>
+          <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} className="min-h-[120px]" placeholder="حاجة بسيطة عن نفسك" maxLength={500} />
+          <p className="mt-1 text-xs muted">أقل من 500 حرف. بتظهر في صفحتك.</p>
         </div>
 
         <Button type="submit" variant="primary" disabled={sending} className="w-full md:w-auto">
-          <Save className="h-4 w-4" /> {sending ? "جارٍ الحفظ..." : "حفظ التغييرات"}
+          <Save className="h-4 w-4" /> {sending ? "جارٍ الحفظ..." : "حفظ"}
         </Button>
       </form>
     </section>

@@ -38,14 +38,14 @@ export function Sidebar() {
   return (
     <aside className="space-y-4">
       <div className="stat-grid">
-        <StatCard label="الموضوعات" value={totalThreads} />
-        <StatCard label="الأعضاء" value={totalUsers} />
+        <StatCard label="مواضيع" value={totalThreads} />
+        <StatCard label="أعضاء" value={totalUsers} />
       </div>
 
       <Card variant="soft" padding="md">
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
-            <span className="muted">المتصلين الآن</span>
+            <span className="muted">المتصلين دلوقتي</span>
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
               <strong className="text-white text-base">{onlineCount}</strong>
@@ -60,14 +60,14 @@ export function Sidebar() {
       </Card>
 
       <Card variant="soft" padding="md" className="card-glow">
-        <h4 className="mb-2 text-sm font-bold text-white flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-          روابط سريعة
-        </h4>
+          <h4 className="mb-2 text-sm font-bold text-white flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            مختصر
+          </h4>
         <div className="flex flex-col gap-0.5">
-          <Link href="/search" className="sidebar-link"><Search className="h-3.5 w-3.5" /> بحث في المنتدى</Link>
+          <Link href="/search" className="sidebar-link"><Search className="h-3.5 w-3.5" /> بحث</Link>
           <Link href="/t/new" className="sidebar-link"><Plus className="h-3.5 w-3.5" /> سؤال جديد</Link>
-          <Link href="/leaderboard" className="sidebar-link"><Users className="h-3.5 w-3.5" /> المتصدرين</Link>
+          <Link href="/leaderboard" className="sidebar-link"><Users className="h-3.5 w-3.5" /> الترتيب</Link>
           <hr className="premium-divider" />
           <Link href="/privacy" className="sidebar-link"><Shield className="h-3.5 w-3.5" /> الخصوصية</Link>
           <Link href="/terms" className="sidebar-link"><FileText className="h-3.5 w-3.5" /> الشروط</Link>

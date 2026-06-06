@@ -80,7 +80,7 @@ export default function CategoryPage() {
   }
 
   if (loading && !threads.length && !category) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">جارٍ التحميل...</div></div>
-  if (!category) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">القسم غير موجود</div></div>
+  if (!category) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">القسم مش موجود</div></div>
 
   return (
     <div className="content-wrap space-y-5">
@@ -92,7 +92,7 @@ export default function CategoryPage() {
           <Button asChild variant="primary">
             <Link href={`/t/new?cat=${category.id}`}>
               <Plus className="h-4 w-4" />
-              أضف موضوعًا جديدًا
+              موضوع جديد
             </Link>
           </Button>
         }
@@ -107,11 +107,11 @@ export default function CategoryPage() {
       {threads.length === 0 ? (
         <Card padding="lg" className="text-center">
           <Sparkles className="mx-auto h-10 w-10 accent-text" />
-          <h3 className="mt-3 text-lg font-extrabold text-white">لا توجد موضوعات في هذا القسم بعد</h3>
-          <p className="mt-2 text-sm muted">كن أول من يكتب موضوعًا في هذا القسم</p>
+          <h3 className="mt-3 text-lg font-extrabold text-white">لسه مفيش موضوعات في القسم ده</h3>
+          <p className="mt-2 text-sm muted">ممكن تكون أول واحد يبدأ بموضوع مفيد</p>
           <div className="mt-4">
             <Button asChild variant="primary">
-              <Link href={`/t/new?cat=${category.id}`}><Plus className="h-4 w-4" /> اكتب أول موضوع</Link>
+              <Link href={`/t/new?cat=${category.id}`}><Plus className="h-4 w-4" /> أول موضوع</Link>
             </Button>
           </div>
         </Card>
@@ -133,9 +133,9 @@ export default function CategoryPage() {
                   </div>
                   <div className="node-stats-row">
                     {thread.isPinned && <Badge variant="brand">مثبت</Badge>}
-                    <span>المشاهدات: <strong>{thread.viewCount ?? 0}</strong></span>
-                    <span>الردود: <strong>{thread.replyCount ?? 0}</strong></span>
-                    <span>التصويتات: <strong>{thread.score ?? 0}</strong></span>
+                    <span>مشاهدات: <strong>{thread.viewCount ?? 0}</strong></span>
+                    <span>ردود: <strong>{thread.replyCount ?? 0}</strong></span>
+                    <span>أصوات: <strong>{thread.score ?? 0}</strong></span>
                   </div>
                 </div>
                 <div className="meta-pill">

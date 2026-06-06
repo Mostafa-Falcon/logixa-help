@@ -26,8 +26,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="mt-3 text-sm muted leading-relaxed">
-              منتدى عربي تقني شامل — أسئلة عملية، إجابات واضحة، ومحتوى قابل للبحث والنمو.
-              مبني للسرعة والثقة والاستدامة.
+              مجتمع تقني عربي — اسأل، شارك الحلول، واستفيد من تجارب غيرك.
             </p>
           </div>
 
@@ -48,7 +47,7 @@ export default function Footer() {
               </Link>
               <Link href="/t/new" className="text-sm muted hover:text-white transition-colors flex items-center gap-2">
                 <Mail className="h-3.5 w-3.5" />
-                اكتب سؤالاً
+                اسأل
               </Link>
             </nav>
           </div>
@@ -71,8 +70,8 @@ export default function Footer() {
         <hr className="divider-gradient mt-6 mb-4" />
 
         <div className="flex flex-col gap-2 text-xs muted md:flex-row md:items-center md:justify-between">
-          <span>© {new Date().getFullYear()} Logixa Help. كل المحتوى منشور تحت مسؤولية كاتبه.</span>
-          <span>v1.0 — مبني ليكون سريعاً، واضحاً، وقابلاً للنمو.</span>
+          <span>© {new Date().getFullYear()} Logixa Help. المحتوى تحت مسؤولية كاتبه.</span>
+          <span>نسخة 1.0</span>
         </div>
       </div>
     </footer>

@@ -234,7 +234,7 @@ export default function ThreadPage() {
   }
 
   if (loading) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">جارٍ التحميل...</div></div>
-  if (!thread) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">الموضوع غير موجود</div></div>
+  if (!thread) return <div className="content-wrap"><div className="surface-card p-8 text-sm muted">الموضوع مش موجود</div></div>
 
   return (
     <div className="content-wrap space-y-5">
@@ -256,10 +256,10 @@ export default function ThreadPage() {
         </div>
         <div className="meta-row mt-3">
           {thread.isPinned && <Badge variant="brand">مثبت</Badge>}
-          {thread.isLocked && <Badge variant="accent"><Lock className="ml-1 inline h-3 w-3" />مغلق</Badge>}
+          {thread.isLocked &&               <Badge variant="accent"><Lock className="ml-1 inline h-3 w-3" />مقفول</Badge>}
           <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {thread.viewCount ?? 0} مشاهدة</span>
           <span className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {thread.replyCount ?? 0} رد</span>
-          <span className="flex items-center gap-1"><ThumbsUp className="h-3.5 w-3.5" /> {thread.score ?? 0} تصويت</span>
+          <span className="flex items-center gap-1"><ThumbsUp className="h-3.5 w-3.5" /> {thread.score ?? 0} صوت</span>
           <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {formatDate(thread.createdAt)}</span>
         </div>
         {thread.tags?.length > 0 && (
@@ -292,7 +292,7 @@ export default function ThreadPage() {
                     <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)}
                       className="w-full rounded-lg border p-3 text-sm bg-white/5 border-white/10 text-white resize-none" rows={6} />
                     <div className="flex gap-2">
-                      <Button size="sm" variant="primary" onClick={saveThreadEdit}><Save className="h-3.5 w-3.5" /> حفظ التعديل</Button>
+                      <Button size="sm" variant="primary" onClick={saveThreadEdit}><Save className="h-3.5 w-3.5" /> حفظ</Button>
                       <Button size="sm" variant="ghost" onClick={() => { setEditingThread(false); setEditContent(thread.content) }}><X className="h-3.5 w-3.5" /> إلغاء</Button>
                     </div>
                   </div>
@@ -334,7 +334,7 @@ export default function ThreadPage() {
               <span><MessageSquare className="ml-1 inline h-4 w-4" />{thread.replyCount ?? 0} ردود</span>
             </div>
             {thread.replyCount === 0 ? (
-              <div className="p-6 text-center text-sm muted">لا توجد ردود بعد. كن أول من يرد!</div>
+              <div className="p-6 text-center text-sm muted">لسه مفيش ردود. أول رد هيساعد صاحب المشكلة!</div>
             ) : (
               <>
                 {bestReply && renderReply(bestReply)}
@@ -344,7 +344,7 @@ export default function ThreadPage() {
                 {replies.length > 0 ? (
                   replies.map(renderReply)
                 ) : thread.replyCount > 0 && !bestReply && (
-                  <div className="p-4 text-center text-sm muted">جميع الردود على الصفحات التالية</div>
+                  <div className="p-4 text-center text-sm muted">باقي الردود في الصفحات اللي بعد كده</div>
                 )}
                 <Pagination currentPage={replyPage} totalPages={replyTotalPages} baseUrl={`/t/${slug}`} onPageChange={goToReplyPage} />
               </>
@@ -353,11 +353,11 @@ export default function ThreadPage() {
 
           {thread.isLocked ? (
             <Card variant="soft" padding="md" id="reply-form">
-              <p className="text-sm muted text-center">هذا الموضوع مغلق — لا يمكن إضافة ردود جديدة.</p>
+              <p className="text-sm muted text-center">الموضوع مقفول — مش قادر ترد دلوقتي.</p>
             </Card>
           ) : (
             <Card padding="md" id="reply-form">
-              <h3 className="mb-3 text-base font-extrabold text-white">اكتب ردك</h3>
+              <h3 className="mb-3 text-base font-extrabold text-white">شارك بإجابتك</h3>
               <ReplyForm threadId={thread.id} />
             </Card>
           )}
@@ -365,11 +365,11 @@ export default function ThreadPage() {
 
         <aside className="space-y-4">
           <Card variant="soft" padding="md">
-            <h4 className="mb-3 text-sm font-bold text-white">حول الموضوع</h4>
+            <h4 className="mb-3 text-sm font-bold text-white">إحصائيات</h4>
             <div className="space-y-2 text-xs muted">
-              <p>المشاهدات: {thread.viewCount ?? 0}</p>
-              <p>الردود: {thread.replyCount ?? 0}</p>
-              <p>التصويتات: {thread.score ?? 0}</p>
+              <p>مشاهدات: {thread.viewCount ?? 0}</p>
+              <p>ردود: {thread.replyCount ?? 0}</p>
+              <p>أصوات: {thread.score ?? 0}</p>
             </div>
           </Card>
         </aside>

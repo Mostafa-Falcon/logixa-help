@@ -52,7 +52,7 @@ export default function NewThreadComposer({ categories }: { categories: any[] })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!user) { setError("يجب تسجيل الدخول أولاً"); return }
+    if (!user) { setError("لازم تسجل دخولك الأول"); return }
 
     setSending(true)
     setError("")
@@ -90,7 +90,7 @@ export default function NewThreadComposer({ categories }: { categories: any[] })
 
       router.push(`/t/${slug}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "حدث خطأ")
+      setError(err instanceof Error ? err.message : "حصل خطأ")
     } finally {
       setSending(false)
     }
@@ -107,35 +107,35 @@ export default function NewThreadComposer({ categories }: { categories: any[] })
       {!user && (
         <div className="surface-card p-8 text-center">
           <LogIn className="mx-auto h-10 w-10 muted" />
-          <h2 className="mt-4 text-xl font-extrabold text-white">تسجيل الدخول مطلوب</h2>
-          <p className="mt-2 text-sm muted">يجب تسجيل الدخول حتى تتمكن من نشر موضوع جديد</p>
+          <h2 className="mt-4 text-xl font-extrabold text-white">لازم تسجل دخولك</h2>
+          <p className="mt-2 text-sm muted">مش هتقدر تنشر موضوع جديد إلا بعد تسجيل الدخول</p>
           <Button asChild variant="primary" className="mt-5">
-            <Link href="/login"><LogIn className="h-4 w-4" /> تسجيل الدخول</Link>
+            <Link href="/login"><LogIn className="h-4 w-4" /> دخول</Link>
           </Button>
         </div>
       )}
 
       {user && <div className="editor-grid items-start">
         <section className="surface-card hero-panel px-5 py-6 md:px-7">
-          <span className="eyebrow">صياغة سؤال جيد</span>
-          <h1 className="mt-4 page-title text-3xl md:text-4xl">اكتب سؤالك كأنك توفر على شخص آخر ساعة كاملة</h1>
-          <p className="mt-4 page-desc">السؤال الجيد ليس فقط ليساعدك الآن، لكنه أيضًا قد يتحول إلى صفحة قوية تظهر في البحث وتجلب ناس كثير لنفس المشكلة.</p>
+          <span className="eyebrow">سؤال واضح = حل أسرع</span>
+          <h1 className="mt-4 page-title text-3xl md:text-4xl">اكتب مشكلتك بوضوح عشان تلاقي الحل بسرعة</h1>
+          <p className="mt-4 page-desc">السؤال الواضح مش بس هيساعدك دلوقتي—كمان هيبقى مرجع لحد تاني عنده نفس المشكلة.</p>
           <div className="mt-6 grid gap-3">
             <div className="surface-soft p-4 text-sm muted">
-              <div className="mb-2 flex items-center gap-2 font-bold text-white"><HiLightningBolt className="accent-text" /> أفضل صيغة</div>
-              <p>اذكر المشكلة، ما الذي جربته، وأين ظهر العطل. بهذه البساطة يبقى الرد أسرع وأذكى.</p>
+              <div className="mb-2 flex items-center gap-2 font-bold text-white"><HiLightningBolt className="accent-text" /> نصيحة للصياغة</div>
+              <p>حدد المشكلة، اذكر إيه اللي جربته، وفين ظهر العطل. كده الرد هيوصلك أسرع.</p>
             </div>
             <div className="surface-soft p-4 text-sm muted">
-              <div className="mb-2 flex items-center gap-2 font-bold text-white"><HiPencilAlt className="accent-text" /> تذكير صغير</div>
-              <p>العنوان القوي يجيب الزيارة، لكن الشرح الواضح هو اللي يجيب الحل ويخلّي الصفحة تعيش.</p>
+              <div className="mb-2 flex items-center gap-2 font-bold text-white"><HiPencilAlt className="accent-text" /> خلّي بالك</div>
+              <p>العنوان القوي يجذب النظر، لكن الشرح الواضح هو اللي يجيبلك الحل.</p>
             </div>
           </div>
         </section>
 
         <section className="surface-card p-5 md:p-7">
           <div className="mb-5">
-            <h2 className="text-2xl font-extrabold text-white">نشر موضوع جديد</h2>
-            <p className="mt-2 text-sm muted">اختر القسم المناسب، ثم اشرح المشكلة بشكل مباشر.</p>
+            <h2 className="text-2xl font-extrabold text-white">اكتب سؤالك</h2>
+            <p className="mt-2 text-sm muted">اختار القسم المناسب، واشرح مشكلتك بشكل مباشر.</p>
           </div>
 
           {error && <div className="notice notice-error mb-4">{error}</div>}
@@ -144,7 +144,7 @@ export default function NewThreadComposer({ categories }: { categories: any[] })
             <div>
               <Label>القسم</Label>
               <Select value={categoryId} onValueChange={setCategoryId} required>
-                <SelectTrigger><SelectValue placeholder="اختر القسم المناسب..." /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="اختار القسم..." /></SelectTrigger>
                 <SelectContent>
                   {categories.map((cat: any) => (
                     <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
@@ -155,13 +155,13 @@ export default function NewThreadComposer({ categories }: { categories: any[] })
 
             <div>
               <Label>العنوان</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="مثال: لماذا يتعطل ويندوز 11 بعد آخر تحديث؟" />
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="مثال: مشكلة في تثبيت بايثون على ويندوز 11" />
             </div>
 
             <div>
-              <Label>الوسوم (اختياري، حتى 5)</Label>
+              <Label>وسوم (اختياري، حد أقصى 5)</Label>
               <div className="flex gap-2">
-                <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag() } }} placeholder="اضف وسماً ثم Enter" />
+                <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag() } }} placeholder="اكتب وسماً وضغط Enter" />
                 <Button type="button" variant="outline" onClick={addTag}>إضافة</Button>
               </div>
               {tags.length > 0 && (
@@ -176,15 +176,15 @@ export default function NewThreadComposer({ categories }: { categories: any[] })
             </div>
 
             <div>
-              <Label>شرح المشكلة</Label>
-              <RichEditor value={body} onChange={setBody} placeholder="اشرح المشكلة، الخطوات، الرسائل التي ظهرت، وما الذي جربته حتى الآن..." />
+              <Label>تفاصيل المشكلة</Label>
+              <RichEditor value={body} onChange={setBody} placeholder="اشرح المشكلة: إيه اللي حصل، إيه اللي جربته، وأي رسائل خطأ ظهرت..." />
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Button type="submit" disabled={sending} variant="primary">
-                {sending ? "جارٍ النشر..." : "نشر السؤال"}
+                {sending ? "جارٍ النشر..." : "انشر السؤال"}
               </Button>
-              <Button type="button" onClick={() => router.back()} variant="outline">إلغاء</Button>
+              <Button type="button" onClick={() => router.back()} variant="outline">رجوع</Button>
             </div>
           </form>
         </section>

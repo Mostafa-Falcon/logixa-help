@@ -18,7 +18,7 @@ const NAV_LINKS = [
   { href: "/#sections", label: "الأقسام", icon: Layers },
   { href: "/leaderboard", label: "المتصدرين", icon: Trophy },
   { href: "/search", label: "بحث", icon: Search },
-  { href: "/t/new", label: "اسأل سؤالًا", icon: CirclePlus },
+  { href: "/t/new", label: "اسأل", icon: CirclePlus },
 ]
 
 export default function Header() {
@@ -65,7 +65,7 @@ export default function Header() {
             </div>
             <div className="hidden sm:block">
               <div className="text-lg font-extrabold text-white"><span className="accent-text">Logixa</span> Help</div>
-              <div className="text-xs muted">منتدى عربي شامل، سريع، وواضح</div>
+              <div className="text-xs muted">اسأل. شارك. استفيد.</div>
             </div>
           </Link>
 
@@ -103,7 +103,7 @@ export default function Header() {
                   <Link href="/login"><LogIn className="h-4 w-4" /> دخول</Link>
                 </Button>
                 <Button asChild variant="primary">
-                  <Link href="/register"><UserPlus className="h-4 w-4" /> إنشاء حساب</Link>
+                  <Link href="/register"><UserPlus className="h-4 w-4" /> حساب جديد</Link>
                 </Button>
               </>
             )}

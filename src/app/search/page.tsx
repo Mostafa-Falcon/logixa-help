@@ -65,9 +65,9 @@ function SearchContent() {
   return (
     <div className="content-wrap space-y-5">
       <PageHeader
-        eyebrow="البحث في المنتدى"
-        title="ابحث عن حل جاهز لمشكلتك"
-        description="جرب كلمات مفتاحية مختلفة — غالبًا مشكلتك اتطرق لها قبل كده"
+        eyebrow="البحث"
+        title="دوّر على حل لمشكلتك"
+        description="جرب كلمات مختلفة—غالباً حد تاني كان عنده نفس المشكلة"
       />
 
       <Card padding="md">
@@ -76,7 +76,7 @@ function SearchContent() {
             name="q"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="ابحث عن مشكلة أو كلمة مفتاحية..."
+            placeholder="ابحث عن مشكلة أو كلمة..."
             className="flex-1"
           />
           <Button type="submit" variant="primary">
@@ -87,11 +87,11 @@ function SearchContent() {
 
       {searched && (
         <section>
-          <h3 className="mb-3 text-lg font-extrabold text-white">نتائج البحث عن "{q}"</h3>
+          <h3 className="mb-3 text-lg font-extrabold text-white">نتائج بحث "{q}"</h3>
           {loading ? (
             <Card padding="md" className="text-center muted">جارٍ البحث...</Card>
           ) : results.length === 0 ? (
-            <Card padding="md" className="text-center muted">لا توجد نتائج. جرب كلمات مختلفة.</Card>
+            <Card padding="md" className="text-center muted">مفيش نتائج. جرب كلمات تانية.</Card>
           ) : (
             <div className="space-y-2">
               {results.map((t: any) => (
@@ -102,8 +102,8 @@ function SearchContent() {
                       <div className="node-main">
                         <div className="node-title">{t.title}</div>
                         <div className="node-stats-row">
-                          <span>المشاهدات: <strong>{t.viewCount ?? 0}</strong></span>
-                          <span>الردود: <strong>{t.replyCount ?? 0}</strong></span>
+                          <span>مشاهدات: <strong>{t.viewCount ?? 0}</strong></span>
+                          <span>ردود: <strong>{t.replyCount ?? 0}</strong></span>
                         </div>
                       </div>
                       <div className="meta-pill">

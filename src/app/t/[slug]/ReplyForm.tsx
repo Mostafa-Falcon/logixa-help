@@ -20,7 +20,7 @@ export default function ReplyForm({ threadId, parentReplyId }: { threadId: strin
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!user) { setError("يجب تسجيل الدخول أولاً"); return }
+    if (!user) { setError("لازم تسجل دخولك الأول"); return }
 
     setSending(true)
     setError("")
@@ -47,7 +47,7 @@ export default function ReplyForm({ threadId, parentReplyId }: { threadId: strin
       setContent("")
       router.refresh()
     } catch {
-      setError("حدث خطأ أثناء الإرسال")
+      setError("حصل خطأ أثناء الإرسال")
     } finally {
       setSending(false)
     }
@@ -57,9 +57,9 @@ export default function ReplyForm({ threadId, parentReplyId }: { threadId: strin
     return (
       <div className="surface-soft rounded-xl p-6 text-center">
         <LogIn className="mx-auto h-8 w-8 muted" />
-        <p className="mt-3 text-sm muted">يجب تسجيل الدخول لتتمكن من الرد</p>
+        <p className="mt-3 text-sm muted">لازم تسجل دخولك عشان ترد</p>
         <Button asChild variant="primary" className="mt-4">
-          <Link href="/login"><LogIn className="h-4 w-4" /> تسجيل الدخول</Link>
+          <Link href="/login"><LogIn className="h-4 w-4" /> دخول</Link>
         </Button>
       </div>
     )
@@ -69,12 +69,12 @@ export default function ReplyForm({ threadId, parentReplyId }: { threadId: strin
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && <div className="notice notice-error">{error}</div>}
 
-      <RichEditor value={content} onChange={setContent} placeholder="اكتب ردك بشكل واضح: ما الحل؟ لماذا نجح؟ وهل في ملاحظة مهمة لازم صاحب السؤال يعرفها؟" minHeight={150} />
+      <RichEditor value={content} onChange={setContent} placeholder="اكتب الحل اللي عرفتوا: إيه اللي نفعت؟ ليه؟ وأي نصيحة لصاحب المشكلة؟" minHeight={150} />
 
       <div className="flex justify-end">
         <Button type="submit" disabled={sending} variant="primary">
           <Send className="h-4 w-4" />
-          {sending ? "جارٍ الإرسال..." : "إرسال الرد"}
+          {sending ? "جارٍ الإرسال..." : "أرسل الرد"}
         </Button>
       </div>
     </form>
