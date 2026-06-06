@@ -56,12 +56,20 @@ export default function HomePage() {
 
   return (
     <div className="content-wrap space-y-6">
-      <PageHeader
-        eyebrow="منتدى عربي شامل مبني للنمو والثقة"
-        title="أسئلة عملية، إجابات واضحة، وأقسام تتوسع مع احتياج الناس."
-        description="ابدأ من التقنية، الموبايل، البرمجة، الذكاء الاصطناعي، الأعمال أو الأسئلة العامة. كل موضوع جيد هنا يتحول لصفحة قابلة للبحث والمشاركة والرجوع لها."
-        actions={
-          <>
+      <section className="surface-card hero-panel px-6 py-8 md:px-8 md:py-10">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-4">
+            <span className="eyebrow">منتدى عربي تقني شامل</span>
+            <h1 className="page-title text-4xl md:text-5xl leading-[1.1]">
+              أسئلة عملية،<br />
+              <span className="accent-text">إجابات واضحة</span>
+            </h1>
+            <p className="max-w-2xl text-base leading-relaxed" style={{ color: "var(--color-text-muted)" }}>
+              ابدأ من التقنية، الموبايل، البرمجة، الذكاء الاصطناعي، الأعمال أو الأسئلة العامة.
+              كل موضوع جيد هنا يتحول لصفحة قابلة للبحث والمشاركة والرجوع لها.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
             <Button asChild variant="primary">
               <Link href="/t/new">
                 <Zap className="h-4 w-4" />
@@ -74,9 +82,9 @@ export default function HomePage() {
                 ابحث عن حل جاهز
               </Link>
             </Button>
-          </>
-        }
-      />
+          </div>
+        </div>
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
         <div className="stat-grid">
@@ -149,7 +157,7 @@ export default function HomePage() {
         ) : (
           <div className="grid gap-4">
             {categories.map((category) => (
-              <Card key={category.id} variant="section" className="node block p-5 no-underline md:p-6">
+              <Card key={category.id} variant="section" className="node block p-5 no-underline md:p-6 card-glow">
                 <Link href={`/c/${category.id}`} className="block">
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="flex items-start gap-4">
@@ -178,17 +186,17 @@ export default function HomePage() {
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <Card padding="md" className="text-center">
+        <Card padding="md" className="text-center card-glow">
           <div className="mx-auto node-icon text-xl">1</div>
           <h3 className="mt-3 text-base font-extrabold text-white">اكتب مشكلتك</h3>
           <p className="mt-2 text-sm muted">وصف واضح ومباشر للمشكلة أو الاستفسار التقني اللي عندك</p>
         </Card>
-        <Card padding="md" className="text-center">
+        <Card padding="md" className="text-center card-glow">
           <div className="mx-auto node-icon text-xl">2</div>
           <h3 className="mt-3 text-base font-extrabold text-white">استقبل الحلول</h3>
           <p className="mt-2 text-sm muted">المجتمع والمساعدين بيقدموا إجابات عملية ومجربة</p>
         </Card>
-        <Card padding="md" className="text-center">
+        <Card padding="md" className="text-center card-glow">
           <div className="mx-auto node-icon text-xl">3</div>
           <h3 className="mt-3 text-base font-extrabold text-white">اختر الأفضل</h3>
           <p className="mt-2 text-sm muted">صوت للإجابة اللي ساعدتك عشان تفيد غيرك في المستقبل</p>
@@ -234,7 +242,7 @@ export default function HomePage() {
                   key={thread.id}
                   href={`/t/${thread.slug}`}
                   className="node block no-underline"
-                  style={{ borderBottom: index < latestThreads.length - 1 ? "1px solid rgba(224, 197, 132, 0.1)" : "none" }}
+                  style={{ borderBottom: index < latestThreads.length - 1 ? "1px solid rgba(224, 197, 132, 0.08)" : "none" }}
                 >
                   <div className="node-body">
                     <div className="node-icon"><BookOpen className="h-5 w-5" /></div>

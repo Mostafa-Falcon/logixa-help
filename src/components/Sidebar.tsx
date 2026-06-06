@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { collection, getDocs, query, orderBy, limit, where } from "firebase/firestore"
+import { FileText, MessageSquare, Plus, Search, Shield, Users } from "lucide-react"
 
 import { db } from "@/lib/firebase"
 import { Card } from "@/components/ui/card"
@@ -40,22 +41,36 @@ export function Sidebar() {
         <StatCard label="الموضوعات" value={totalThreads} />
         <StatCard label="الأعضاء" value={totalUsers} />
       </div>
+
       <Card variant="soft" padding="md">
-        <div className="space-y-3 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
-            <span className="muted">متصل الآن: <strong className="text-white">{onlineCount}</strong></span>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="muted">المتصلين الآن</span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
+              <strong className="text-white text-base">{onlineCount}</strong>
+            </span>
           </div>
-          {latestUser && <div className="muted">آخر عضو: <strong className="text-white">{latestUser}</strong></div>}
+          <hr className="premium-divider" />
+          <div className="flex items-center justify-between text-sm">
+            <span className="muted">آخر عضو</span>
+            <span className="text-white font-bold text-sm">{latestUser || "—"}</span>
+          </div>
         </div>
       </Card>
-      <Card variant="soft" padding="md">
-        <h4 className="mb-2 text-sm font-bold text-white">روابط سريعة</h4>
-        <div className="flex flex-col gap-2 text-sm">
-          <Link href="/search" className="muted hover:text-white">🔍 بحث</Link>
-          <Link href="/t/new" className="muted hover:text-white">✍️ سؤال جديد</Link>
-          <Link href="/privacy" className="muted hover:text-white">🔒 الخصوصية</Link>
-          <Link href="/terms" className="muted hover:text-white">📜 الشروط</Link>
+
+      <Card variant="soft" padding="md" className="card-glow">
+        <h4 className="mb-2 text-sm font-bold text-white flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+          روابط سريعة
+        </h4>
+        <div className="flex flex-col gap-0.5">
+          <Link href="/search" className="sidebar-link"><Search className="h-3.5 w-3.5" /> بحث في المنتدى</Link>
+          <Link href="/t/new" className="sidebar-link"><Plus className="h-3.5 w-3.5" /> سؤال جديد</Link>
+          <Link href="/leaderboard" className="sidebar-link"><Users className="h-3.5 w-3.5" /> المتصدرين</Link>
+          <hr className="premium-divider" />
+          <Link href="/privacy" className="sidebar-link"><Shield className="h-3.5 w-3.5" /> الخصوصية</Link>
+          <Link href="/terms" className="sidebar-link"><FileText className="h-3.5 w-3.5" /> الشروط</Link>
         </div>
       </Card>
     </aside>
