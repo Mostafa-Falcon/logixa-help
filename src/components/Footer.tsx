@@ -26,12 +26,12 @@ export default function Footer() {
               </span>
             </div>
             <p className="mt-3 text-sm muted leading-relaxed">
-              مجتمع تقني عربي — اسأل، شارك الحلول، واستفيد من تجارب غيرك.
+              مجتمع عربي شامل — اسأل، شارك، واستفيد من تجارب الآلاف في كل المجالات.
             </p>
           </div>
 
           <div className="md:mr-8">
-            <span className="eyebrow">تصفح سريع</span>
+            <span className="eyebrow">روابط سريعة</span>
             <nav className="mt-3 flex flex-col gap-2">
               <Link href="/" className="text-sm muted hover:text-white transition-colors flex items-center gap-2">
                 <Home className="h-3.5 w-3.5" />

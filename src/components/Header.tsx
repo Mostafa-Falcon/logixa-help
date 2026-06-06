@@ -16,8 +16,8 @@ import { OnlineCounter } from "@/components/OnlineCounter"
 const NAV_LINKS = [
   { href: "/", label: "الرئيسية", icon: Home },
   { href: "/#sections", label: "الأقسام", icon: Layers },
-  { href: "/leaderboard", label: "المتصدرين", icon: Trophy },
   { href: "/search", label: "بحث", icon: Search },
+  { href: "/leaderboard", label: "المتصدرين", icon: Trophy },
   { href: "/t/new", label: "اسأل", icon: CirclePlus },
 ]
 
@@ -63,10 +63,10 @@ export default function Header() {
             >
               <span className="text-base font-extrabold accent-text">LH</span>
             </div>
-            <div className="hidden sm:block">
-              <div className="text-lg font-extrabold text-white"><span className="accent-text">Logixa</span> Help</div>
-              <div className="text-xs muted">اسأل. شارك. استفيد.</div>
-            </div>
+          <div className="hidden sm:block">
+            <div className="text-lg font-extrabold text-white"><span className="accent-text">Logixa</span> Help</div>
+            <div className="text-xs muted">منتدى عربي شامل للجميع</div>
+          </div>
           </Link>
 
           <nav className="hidden items-center gap-2 lg:flex">

@@ -74,24 +74,24 @@ function LoginForm() {
       <div className="auth-grid items-start">
         <section className="surface-card hero-panel px-5 py-6 md:px-7">
           <span className="eyebrow">دخول آمن وسريع</span>
-          <h1 className="mt-4 page-title text-3xl md:text-4xl">ادخل وشارك في النقاشات</h1>
+          <h1 className="mt-4 page-title text-3xl md:text-4xl">ادخل وشارك في كل المجالات</h1>
           <p className="mt-4 page-desc">
-            بحساب واحد تقدر تطرح أسئلتك، تشارك بخبرتك، وتصوّت على أفضل الإجابات.
+            بحساب واحد تقدر تطرح أسئلتك، تشارك بخبرتك، وتصوّت على أفضل الإجابات في أي مجال.
           </p>
           <div className="mt-6 grid gap-3">
             <div className="surface-soft p-4 text-sm muted">
               <div className="mb-2 flex items-center gap-2 font-bold text-white">
                 <HiSparkles className="accent-text" />
-                ليه تسجل؟
+                ليه تدخل؟
               </div>
-              <p>عشان تقدر تكتب أسئلة، ترد على استفسارات الناس، وتبني سمعة في المجتمع التقني.</p>
+              <p>عشان تقدر تكتب أسئلة، ترد على استفسارات الناس، وتكون جزء من مجتمع عربي بينمو يومًا بعد يوم.</p>
             </div>
             <div className="surface-soft p-4 text-sm muted">
               <div className="mb-2 flex items-center gap-2 font-bold text-white">
                 <HiLockClosed className="accent-text" />
                 خصوصيتك عندنا
               </div>
-              <p>البيانات بتاعتك مش بتتشارك مع حد. الدخول آمن عبر Google، وانت المتحكم الكامل في حسابك.</p>
+              <p>البيانات بتاعتك مش بتتشارك مع حد. الدخول آمن عبر Google، وانت المتحكم الكامل في معلوماتك.</p>
             </div>
           </div>
         </section>

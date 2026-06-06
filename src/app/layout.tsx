@@ -19,16 +19,16 @@ const baseUrl = 'https://logixa-help.vercel.app'
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: 'Logixa Help - منتدى عربي تقني للأسئلة والحلول',
+    default: 'Logixa Help - منتدى عربي شامل للأسئلة والنقاشات',
     template: '%s - Logixa Help',
   },
   description:
-    'منتدى عربي تقني يساعدك في مشاكل الكمبيوتر، الموبايل، البرمجة، وأدوات الذكاء الاصطناعي. صفحات سريعة، محتوى واضح، وتجربة قراءة موثوقة.',
-  keywords: ['منتدى عربي', 'تقني', 'أسئلة', 'حلول', 'كمبيوتر', 'برمجة', 'ذكاء اصطناعي', 'مشاكل ويندوز', 'شروحات'],
+    'منتدى عربي شامل يضم كل المجالات: تقنية، تعليم، صحة، أعمال، ترفيه، وأكثر. اسأل، شارك، واستفيد من تجارب المجتمع العربي.',
+  keywords: ['منتدى عربي', 'منتدى شامل', 'أسئلة', 'نقاشات', 'تقنية', 'تعليم', 'صحة', 'أعمال', 'ترفيه', 'مجتمع عربي', 'حلول'],
   openGraph: {
-    title: 'Logixa Help - منتدى عربي تقني للأسئلة والحلول',
+    title: 'Logixa Help - منتدى عربي شامل للأسئلة والنقاشات',
     description:
-      'منصة عربية للأسئلة والإجابات التقنية تجمع حلولًا عملية لمشاكل الكمبيوتر، الموبايل، البرمجة، والذكاء الاصطناعي.',
+      'منصة عربية تجمع كل المجالات: تقنية، تعليم، صحة، أعمال، ترفيه، وأكثر. مجتمع عربي يشارك المعرفة والحلول.',
     type: 'website',
     locale: 'ar_AR',
     siteName: 'Logixa Help',
@@ -36,8 +36,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary',
-    title: 'Logixa Help - منتدى عربي تقني',
-    description: 'منصة عربية للأسئلة والإجابات التقنية',
+    title: 'Logixa Help - منتدى عربي شامل',
+    description: 'منصة عربية شاملة للأسئلة والنقاشات في كل المجالات',
   },
   robots: {
     index: true,
@@ -66,7 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             "name": "Logixa Help",
             "alternateName": "منتدى Logixa Help",
             "url": baseUrl,
-            "description": "منتدى عربي تقني للأسئلة والحلول في الكمبيوتر، الموبايل، البرمجة، والذكاء الاصطناعي.",
+            "description": "منتدى عربي شامل يضم كل المجالات: تقنية، تعليم، صحة، أعمال، ترفيه، وأكثر. اسأل، شارك، واستفيد من تجارب المجتمع العربي.",
             "inLanguage": "ar",
             "potentialAction": {
               "@type": "SearchAction",
@@ -89,7 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             "url": baseUrl,
             "applicationCategory": "Forum",
             "operatingSystem": "All",
-            "description": "منصة عربية للأسئلة والإجابات التقنية",
+            "description": "منصة عربية شاملة للأسئلة والنقاشات في كل المجالات",
             "inLanguage": "ar",
           }),
         }}

@@ -73,10 +73,10 @@ function RegisterForm() {
     <div className="content-wrap">
       <div className="auth-grid items-start">
         <section className="surface-card hero-panel px-5 py-6 md:px-7">
-          <span className="eyebrow">انضم للمجتمع التقني</span>
-          <h1 className="mt-4 page-title text-3xl md:text-4xl">أنشئ حسابك وشارك خبرتك</h1>
+          <span className="eyebrow">انضم للمجتمع العربي</span>
+          <h1 className="mt-4 page-title text-3xl md:text-4xl">أنشئ حسابك وشارك في كل المجالات</h1>
           <p className="mt-4 page-desc">
-            حساب واحد يخليك تطرح مشاكلك، تشارك الحلول اللي عرفتها، وتكون جزء من مجتمع تقني عربي بيتطور.
+            حساب واحد يخليك تطرح أسئلتك، تشارك بخبرتك، وتكون جزء من مجتمع عربي بيجمع كل المجالات.
           </p>
           <div className="mt-6 grid gap-3">
             <div className="surface-soft p-4 text-sm muted">

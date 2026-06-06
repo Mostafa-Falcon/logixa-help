@@ -24,6 +24,10 @@ export interface Category {
   order: number
   threadCount: number
   createdAt: string
+  /** المجال العام للقسم: تقني / تعليم / صحة / ترفيه / أعمال / الخ */
+  field?: string
+  /** لون مخصص للقسم */
+  accentColor?: string
 }
 
 export interface Thread {

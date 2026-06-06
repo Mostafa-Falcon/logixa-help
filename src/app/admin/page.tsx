@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { FolderPlus, Plus, RotateCcw } from "lucide-react"
+import { FolderPlus, Globe, Plus, RotateCcw } from "lucide-react"
 import { collection, getDocs, query, orderBy, setDoc, doc, deleteDoc } from "firebase/firestore"
 import { toast } from "sonner"
 
@@ -26,6 +26,7 @@ export default function AdminPage() {
   const [slug, setSlug] = useState("")
   const [description, setDescription] = useState("")
   const [icon, setIcon] = useState("💬")
+  const [field, setField] = useState("")
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -42,10 +43,10 @@ export default function AdminPage() {
     try {
       const catSlug = slug || toSlug(name)
       await setDoc(doc(db, "categories", catSlug), {
-        name, slug: catSlug, description, icon, order: categories.length + 1, threadCount: 0, createdAt: new Date().toISOString(),
+        name, slug: catSlug, description, icon, field: field || "عام", order: categories.length + 1, threadCount: 0, createdAt: new Date().toISOString(),
       })
       toast.success("تم إنشاء القسم")
-      setName(""); setSlug(""); setDescription(""); setIcon("💬")
+      setName(""); setSlug(""); setDescription(""); setIcon("💬"); setField("")
       const snap = await getDocs(query(collection(db, "categories"), orderBy("order")))
       setCategories(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     } catch { toast.error("فشل إنشاء القسم") }
@@ -76,6 +77,23 @@ export default function AdminPage() {
               <div><Label>الأيقونة</Label><Input value={icon} onChange={(e) => setIcon(e.target.value)} maxLength={4} placeholder="🌐" /></div>
             </div>
             <div><Label>الرابط المختصر</Label><Input value={slug} onChange={(e) => setSlug(toSlug(e.target.value))} required dir="ltr" className="text-left" placeholder="networks" /></div>
+            <div>
+              <Label>المجال</Label>
+              <select
+                value={field}
+                onChange={(e) => setField(e.target.value)}
+                className="form-input"
+              >
+                <option value="">عام</option>
+                <option value="تقنية">تقنية</option>
+                <option value="تعليم">تعليم</option>
+                <option value="صحة">صحة</option>
+                <option value="أعمال">أعمال</option>
+                <option value="ترفيه">ترفيه</option>
+                <option value="أمن">أمن</option>
+                <option value="فنون">فنون</option>
+              </select>
+            </div>
             <div><Label>وصف القسم</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="وصف يساعد الزائر وجوجل يفهموا القسم" /></div>
             <Button type="submit" variant="primary" disabled={saving}><Plus className="h-4 w-4" /> {saving ? "إضافة..." : "إضافة قسم"}</Button>
           </form>
@@ -93,7 +111,7 @@ export default function AdminPage() {
                     <span className="text-lg">{c.icon}</span>
                     <div>
                       <div className="text-sm font-bold text-white">{c.name}</div>
-                      <div className="text-xs muted">{c.slug} · {c.threadCount ?? 0} موضوعات</div>
+                      <div className="text-xs muted">{c.slug} · {c.threadCount ?? 0} موضوعات{c.field ? ` · ${c.field}` : ""}</div>
                     </div>
                   </div>
                   <Button type="button" variant="ghost" size="sm" onClick={() => deleteCategory(c.id)}>حذف</Button>

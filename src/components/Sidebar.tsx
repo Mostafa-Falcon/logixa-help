@@ -62,7 +62,7 @@ export function Sidebar() {
       <Card variant="soft" padding="md" className="card-glow">
           <h4 className="mb-2 text-sm font-bold text-white flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            مختصر
+            تصفح سريع
           </h4>
         <div className="flex flex-col gap-0.5">
           <Link href="/search" className="sidebar-link"><Search className="h-3.5 w-3.5" /> بحث</Link>
